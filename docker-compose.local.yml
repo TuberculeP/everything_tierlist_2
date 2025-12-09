@@ -1,4 +1,7 @@
 services:
   app:
-    ports: 
+    ports:
       - "3000:3000"
+  pgadmin:
+    ports:
+      - "5050:80"

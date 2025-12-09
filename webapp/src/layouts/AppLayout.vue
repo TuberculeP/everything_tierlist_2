@@ -15,7 +15,7 @@
 
         <div v-if="isAuthenticated" class="flex items-center gap-4">
           <span class="text-sm text-muted-foreground">
-            {{ user?.firstName }}
+            {{ user?.pseudo }}
           </span>
           <Button variant="outline" size="sm" @click="disconnect">
             Déconnexion

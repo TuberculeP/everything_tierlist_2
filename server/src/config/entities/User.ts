@@ -19,10 +19,7 @@ export class User {
   password?: string;
 
   @Column()
-  firstName: string;
-
-  @Column()
-  lastName: string;
+  pseudo: string;
 
   @Column({ default: true })
   isActive: boolean;

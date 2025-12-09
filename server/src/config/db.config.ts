@@ -13,6 +13,8 @@ console.log(
   POSTGRES_URL,
 );
 
+const isProd = process.env.NODE_ENV === "production";
+
 if (POSTGRES_URL) {
   pg = new DataSource({
     type: "postgres",
@@ -26,8 +28,9 @@ if (POSTGRES_URL) {
   pg = new DataSource({
     type: "sqlite",
     database: "sqlite.db",
-    synchronize: true,
+    synchronize: !isProd,
     entities,
+    migrations: [__dirname + "/../migrations/*.js"],
     migrationsTableName: "migration_table",
   });
 }

@@ -8,8 +8,8 @@ const authRouter = Router();
 
 authRouter.post("/register", async (req, res) => {
   // Validate user
-  const { firstName, lastName, email, password } = req.body;
-  if (!firstName || !lastName || !email || !password) {
+  const { pseudo, email, password } = req.body;
+  if (!pseudo || !email || !password) {
     res.status(400).json({ message: "All fields are required" });
     return;
   }
@@ -18,8 +18,7 @@ authRouter.post("/register", async (req, res) => {
 
   const newUser = new User();
 
-  newUser.firstName = firstName;
-  newUser.lastName = lastName;
+  newUser.pseudo = pseudo;
   newUser.email = email;
   newUser.password = hash;
 
