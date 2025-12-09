@@ -30,8 +30,8 @@ export class Vote {
   @Column({ name: "user_id" })
   userId: string;
 
-  @Column({ length: 1 })
-  tier: string; // S, A, B, C, D
+  @Column({ length: 10 })
+  tier: string; // S, A, B, C, D, ignored
 
   @UpdateDateColumn({ name: "modified_at" })
   modifiedAt: Date;
