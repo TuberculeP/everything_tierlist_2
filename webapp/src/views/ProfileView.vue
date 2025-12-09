@@ -1,14 +1,6 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Mon profil</h1>
-      <router-link :to="{ name: 'landing-main' }">
-        <Button variant="outline" size="sm">
-          <ArrowLeft class="w-4 h-4 mr-2" />
-          Retour
-        </Button>
-      </router-link>
-    </div>
+    <h1 class="text-2xl font-bold">Mon profil</h1>
 
     <!-- User Info Card -->
     <Card>
@@ -22,7 +14,9 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-muted-foreground">Pseudo</label>
+          <label class="text-sm font-medium text-muted-foreground"
+            >Pseudo</label
+          >
           <div v-if="!editingPseudo" class="flex items-center gap-2">
             <p class="text-sm">{{ user?.pseudo }}</p>
             <Button variant="ghost" size="icon-sm" @click="startEditPseudo">
@@ -61,7 +55,10 @@
         <div v-if="loadingItems" class="text-sm text-muted-foreground">
           Chargement...
         </div>
-        <div v-else-if="myItems.length === 0" class="text-sm text-muted-foreground">
+        <div
+          v-else-if="myItems.length === 0"
+          class="text-sm text-muted-foreground"
+        >
           Vous n'avez pas encore cree d'item.
         </div>
         <div v-else class="space-y-2">
@@ -134,8 +131,8 @@
         <DialogHeader>
           <DialogTitle>Supprimer l'item ?</DialogTitle>
           <DialogDescription>
-            Etes-vous sur de vouloir supprimer "{{ itemToDelete?.name }}" ? Cette
-            action est irreversible et supprimera egalement tous les votes
+            Etes-vous sur de vouloir supprimer "{{ itemToDelete?.name }}" ?
+            Cette action est irreversible et supprimera egalement tous les votes
             associes.
           </DialogDescription>
         </DialogHeader>
@@ -179,7 +176,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Trash, Trash2, RotateCcw } from "lucide-vue-next";
+import { Pencil, Trash, Trash2, RotateCcw } from "lucide-vue-next";
 
 const { user } = storeToRefs(useAuthStore());
 
@@ -255,7 +252,9 @@ async function deleteItem() {
   const result = await apiClient.delete(`/items/${itemToDelete.value.id}`);
 
   if (!result.error) {
-    myItems.value = myItems.value.filter((i) => i.id !== itemToDelete.value?.id);
+    myItems.value = myItems.value.filter(
+      (i) => i.id !== itemToDelete.value?.id,
+    );
     showDeleteDialog.value = false;
   }
 

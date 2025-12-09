@@ -63,10 +63,6 @@ async function createItem() {
   isLoading.value = false;
 }
 
-function addExistingItem(item: Item) {
-  emit("add", item);
-}
-
 const maxLength = 64;
 const charCount = computed(() => searchQuery.value.length);
 </script>

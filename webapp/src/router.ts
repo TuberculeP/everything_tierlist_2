@@ -3,13 +3,14 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoginView from "./views/auth/LoginView.vue";
 import RegisterView from "./views/auth/RegisterView.vue";
 import ProfileView from "./views/ProfileView.vue";
+import LeaderboardView from "./views/LeaderboardView.vue";
 
 import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
 import type { User } from "./lib/utils/types";
 import Main from "./views/Main.vue";
 
-async function authGuard(to: any, from: any, next: any) {
+async function authGuard(to: any, _from: any, next: any) {
   const authStore = useAuthStore();
   const check = await apiClient.get<{ user: User }>("/auth/check");
   if (check.error) {
@@ -28,6 +29,11 @@ const routes = [
   { path: "/", redirect: "/app", name: "home-redirect" },
   { path: "/app", component: Main, name: "landing-main" },
   { path: "/app/profile", component: ProfileView, name: "app-profile" },
+  {
+    path: "/app/leaderboard",
+    component: LeaderboardView,
+    name: "app-leaderboard",
+  },
   { path: "/login", component: LoginView, name: "app-login" },
   { path: "/register", component: RegisterView, name: "app-register" },
 ];

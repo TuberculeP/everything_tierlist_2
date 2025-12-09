@@ -1,29 +1,50 @@
 <template>
   <div class="min-h-screen bg-background">
-    <!-- Header -->
+    <!-- Header / Navbar -->
     <header
       class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
-      <div
-        class="flex h-14 max-w-5xl items-center justify-between px-6 mx-auto"
-      >
-        <div class="flex items-center gap-2">
-          <h1 class="text-lg font-semibold flex items-center gap-2">
-            Everything Tierlist <Badge variant="outline">alpha</Badge>
-          </h1>
-        </div>
+      <div class="flex h-14 max-w-5xl mx-auto px-6 items-center gap-6">
+        <!-- Logo -->
+        <h1 class="text-lg font-semibold flex items-center gap-2 shrink-0">
+          Everything Tierlist <Badge variant="outline">alpha</Badge>
+        </h1>
 
-        <div v-if="isAuthenticated" class="flex items-center gap-4">
-          <router-link
-            :to="{ name: 'app-profile' }"
-            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {{ user?.pseudo }}
-          </router-link>
-          <Button variant="outline" size="sm" @click="disconnect">
-            Deconnexion
-          </Button>
-        </div>
+        <template v-if="isAuthenticated">
+          <!-- Navigation -->
+          <nav class="flex gap-1">
+            <router-link
+              v-for="tab in tabs"
+              :key="tab.name"
+              :to="{ name: tab.name }"
+              :class="[
+                'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                isActiveTab(tab.name)
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+              ]"
+            >
+              <component :is="tab.icon" class="w-4 h-4 inline-block mr-1.5" />
+              {{ tab.label }}
+            </router-link>
+          </nav>
+
+          <!-- Spacer -->
+          <div class="flex-1"></div>
+
+          <!-- User -->
+          <div class="flex items-center gap-2 shrink-0">
+            <router-link
+              :to="{ name: 'app-profile' }"
+              class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {{ user?.pseudo }}
+            </router-link>
+            <Button variant="ghost" size="icon-sm" @click="disconnect">
+              <LogOut class="w-4 h-4" />
+            </Button>
+          </div>
+        </template>
       </div>
     </header>
 
@@ -62,13 +83,25 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useRoute } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 import apiClient from "../lib/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/ui/badge/Badge.vue";
 import { ref } from "vue";
+import { LayoutGrid, Trophy, LogOut } from "lucide-vue-next";
 
+const route = useRoute();
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
+
+const tabs = [
+  { name: "landing-main", label: "Tierlist", icon: LayoutGrid },
+  { name: "app-leaderboard", label: "Leaderboard", icon: Trophy },
+];
+
+function isActiveTab(tabName: string): boolean {
+  return route.name === tabName;
+}
 
 async function disconnect() {
   const result = await apiClient.post("/auth/logout");
@@ -76,7 +109,7 @@ async function disconnect() {
     user.value = undefined;
     window.location.reload();
   } else {
-    console.error("Erreur lors de la déconnexion :", result.error);
+    console.error("Erreur lors de la deconnexion :", result.error);
   }
 }
 

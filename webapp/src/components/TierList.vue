@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from "vue";
 import draggable from "vuedraggable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import ItemSearch from "@/components/ItemSearch.vue";
 import ItemStatsModal from "@/components/ItemStatsModal.vue";
 import apiClient from "@/lib/utils/apiClient";
 import type { Item } from "@/lib/utils/types";
+import { RefreshCw } from "lucide-vue-next";
 
 // Stats modal state
 const selectedItem = ref<Item | null>(null);
@@ -71,16 +73,12 @@ const tiers = ref<Tier[]>([
 ]);
 
 const unrankedItems = ref<Item[]>([]);
-const myUnvotedItems = ref<Item[]>([]);
-const recommendations = ref<Item[]>([]);
 const ignoredItems = ref<Item[]>([]);
+const loadingRecommendations = ref(false);
 
-// Get all items currently in use (in tiers or any unranked section)
-const usedItemIds = computed(() => {
+// Items already voted on (in tiers or ignored) - these should never reappear
+const votedItemIds = computed(() => {
   const ids = new Set<string>();
-  unrankedItems.value.forEach((item) => ids.add(item.id));
-  myUnvotedItems.value.forEach((item) => ids.add(item.id));
-  recommendations.value.forEach((item) => ids.add(item.id));
   ignoredItems.value.forEach((item) => ids.add(item.id));
   tiers.value.forEach((tier) => {
     tier.items.forEach((item) => ids.add(item.id));
@@ -88,13 +86,11 @@ const usedItemIds = computed(() => {
   return ids;
 });
 
-// Check if there are items to sort
-const hasItemsToSort = computed(() => {
-  return (
-    unrankedItems.value.length > 0 ||
-    myUnvotedItems.value.length > 0 ||
-    recommendations.value.length > 0
-  );
+// All items in use (including unranked) - for search deduplication
+const usedItemIds = computed(() => {
+  const ids = new Set(votedItemIds.value);
+  unrankedItems.value.forEach((item) => ids.add(item.id));
+  return ids;
 });
 
 function handleAddItem(item: Item) {
@@ -106,8 +102,6 @@ function handleAddItem(item: Item) {
 
 function removeFromUnrankedLists(itemId: string) {
   unrankedItems.value = unrankedItems.value.filter((i) => i.id !== itemId);
-  myUnvotedItems.value = myUnvotedItems.value.filter((i) => i.id !== itemId);
-  recommendations.value = recommendations.value.filter((i) => i.id !== itemId);
   ignoredItems.value = ignoredItems.value.filter((i) => i.id !== itemId);
 }
 
@@ -147,7 +141,27 @@ async function handleIgnoredChange(event: { added?: { element: Item } }) {
   }
 }
 
+async function fetchRecommendations() {
+  loadingRecommendations.value = true;
+  const response = await apiClient.get<{ items: Item[] }>(
+    "/items/recommendations",
+  );
+  if (response.data?.items) {
+    // Filter out items already voted on (in tiers or ignored)
+    const newItems = response.data.items.filter(
+      (item) => !votedItemIds.value.has(item.id),
+    );
+    unrankedItems.value = newItems;
+  }
+  loadingRecommendations.value = false;
+}
+
+async function refreshRecommendations() {
+  await fetchRecommendations();
+}
+
 onMounted(async () => {
+  // Load existing votes into tiers
   const votesResponse = await apiClient.get<{ votes: Vote[] }>("/votes/my");
   if (votesResponse.data?.votes) {
     for (const vote of votesResponse.data.votes) {
@@ -166,19 +180,8 @@ onMounted(async () => {
     }
   }
 
-  const myUnvotedResponse = await apiClient.get<{ items: Item[] }>(
-    "/items/my-unvoted",
-  );
-  if (myUnvotedResponse.data?.items) {
-    myUnvotedItems.value = myUnvotedResponse.data.items;
-  }
-
-  const recommendationsResponse = await apiClient.get<{ items: Item[] }>(
-    "/items/recommendations",
-  );
-  if (recommendationsResponse.data?.items) {
-    recommendations.value = recommendationsResponse.data.items;
-  }
+  // Load recommendations
+  await fetchRecommendations();
 });
 </script>
 
@@ -237,117 +240,74 @@ onMounted(async () => {
       </CardContent>
     </Card>
 
-    <!-- My unvoted items -->
-    <Card v-if="myUnvotedItems.length > 0">
-      <CardHeader class="pb-3">
-        <CardTitle class="text-base">Mes créations à trier</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <draggable
-          v-model="myUnvotedItems"
-          group="tierlist"
-          item-key="id"
-          class="flex flex-wrap gap-2 min-h-14 p-3 border border-dashed border-orange-200 bg-orange-50/50 rounded-md"
-          ghost-class="dragging-ghost"
-          chosen-class="dragging-chosen"
-          :delay="100"
-          :delay-on-touch-only="true"
-          @change="handleUnrankedChange"
+    <!-- Items to sort -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-base font-medium">Éléments à classer</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          @click="refreshRecommendations"
+          :disabled="loadingRecommendations"
         >
-          <template #item="{ element }">
-            <Badge
-              variant="outline"
-              class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-orange-100 border-orange-200"
-              @dblclick="openStatsModal(element)"
-            >
-              {{ element.name }}
-            </Badge>
-          </template>
-        </draggable>
-      </CardContent>
-    </Card>
-
-    <!-- Recommendations -->
-    <Card v-if="recommendations.length > 0">
-      <CardHeader class="pb-3">
-        <CardTitle class="text-base">Recommandations</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <draggable
-          v-model="recommendations"
-          group="tierlist"
-          item-key="id"
-          class="flex flex-wrap gap-2 min-h-14 p-3 border border-dashed border-purple-200 bg-purple-50/50 rounded-md"
-          ghost-class="dragging-ghost"
-          chosen-class="dragging-chosen"
-          :delay="100"
-          :delay-on-touch-only="true"
-          @change="handleUnrankedChange"
-        >
-          <template #item="{ element }">
-            <Badge
-              variant="outline"
-              class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-purple-100 border-purple-200"
-              @dblclick="openStatsModal(element)"
-            >
-              {{ element.name }}
-            </Badge>
-          </template>
-        </draggable>
-      </CardContent>
-    </Card>
-
-    <!-- Manually added items and Ignored zone side by side -->
-    <div class="flex gap-4">
-      <!-- Manually added items -->
-      <div v-if="unrankedItems.length > 0" class="flex-1">
-        <h2 class="text-base mb-1">Éléments à classer</h2>
-        <div>
-          <draggable
-            v-model="unrankedItems"
-            group="tierlist"
-            item-key="id"
-            class="flex flex-wrap gap-2 min-h-14 p-3 border border-dashed rounded-md"
-            ghost-class="dragging-ghost"
-            chosen-class="dragging-chosen"
-            :delay="100"
-            :delay-on-touch-only="true"
-            @change="handleUnrankedChange"
-          >
-            <template #item="{ element }">
-              <Badge
-                variant="outline"
-                class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-accent"
-                @dblclick="openStatsModal(element)"
-              >
-                {{ element.name }}
-              </Badge>
-            </template>
-          </draggable>
-        </div>
+          <RefreshCw
+            class="w-4 h-4 mr-1"
+            :class="{ 'animate-spin': loadingRecommendations }"
+          />
+          Actualiser
+        </Button>
       </div>
-
-      <!-- Ignored/Trash zone -->
-      <div v-if="hasItemsToSort" class="w-48 shrink-0">
-        <h2 class="text-base mb-1 text-muted-foreground">
-          🗑️ Je refuse de trier ça
-        </h2>
+      <div class="flex gap-4">
         <draggable
+          v-model="unrankedItems"
+          group="tierlist"
+          item-key="id"
+          class="flex-1 flex flex-wrap gap-2 min-h-14 p-3 border border-dashed rounded-md"
+          ghost-class="dragging-ghost"
+          chosen-class="dragging-chosen"
+          :delay="100"
+          :delay-on-touch-only="true"
+          @change="handleUnrankedChange"
+        >
+          <template #item="{ element }">
+            <Badge
+              variant="outline"
+              class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-accent"
+              @dblclick="openStatsModal(element)"
+            >
+              {{ element.name }}
+            </Badge>
+          </template>
+        </draggable>
+
+        <!-- Ignored/Trash zone -->
+        <draggable
+          v-if="unrankedItems.length > 0"
           v-model="ignoredItems"
           :group="{ name: 'tierlist', pull: false }"
           item-key="id"
-          class="min-h-14 p-3 border border-dashed border-gray-300 bg-gray-50/50 rounded-md"
+          class="w-32 shrink-0 min-h-14 p-3 border border-dashed border-gray-300 bg-gray-50/50 rounded-md flex items-center justify-center"
           ghost-class="dragging-ghost"
           chosen-class="dragging-chosen"
           :delay="100"
           :delay-on-touch-only="true"
           @change="handleIgnoredChange"
         >
+          <template #header>
+            <span class="text-muted-foreground text-sm">🗑️</span>
+          </template>
           <template #item="{ element }">
             <span :key="element.id" class="sr-only">{{ element.name }}</span>
           </template>
         </draggable>
       </div>
+      <p
+        v-if="unrankedItems.length === 0 && !loadingRecommendations"
+        class="text-sm text-muted-foreground mt-2"
+      >
+        Aucun élément à classer. Utilisez la recherche pour en ajouter ou
+        cliquez sur Actualiser.
+      </p>
     </div>
 
     <!-- Stats Modal -->
