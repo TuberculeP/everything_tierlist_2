@@ -55,7 +55,12 @@ router.get("/my-unvoted", async (req, res): Promise<void> => {
     // Get items created by user that don't have a vote from this user
     const items = await itemRepository
       .createQueryBuilder("item")
-      .leftJoin(Vote, "vote", "vote.item_id = item.id AND vote.user_id = :userId", { userId })
+      .leftJoin(
+        Vote,
+        "vote",
+        "vote.item_id = item.id AND vote.user_id = :userId",
+        { userId },
+      )
       .where("item.user_id = :userId", { userId })
       .andWhere("vote.id IS NULL")
       .orderBy("item.created_at", "DESC")
@@ -82,8 +87,17 @@ router.get("/recommendations", async (req, res): Promise<void> => {
     // Get random items that user hasn't voted on
     const items = await itemRepository
       .createQueryBuilder("item")
-      .leftJoin(Vote, "vote", "vote.item_id = item.id AND vote.user_id = :userId", { userId })
-      .where("vote.id IS NULL")
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select("1")
+          .from(Vote, "vote")
+          .where("vote.item_id = item.id")
+          .andWhere("vote.user_id = :userId")
+          .getQuery();
+        return `NOT EXISTS ${subQuery}`;
+      })
+      .setParameter("userId", userId)
       .orderBy("RANDOM()")
       .take(20)
       .getMany();
