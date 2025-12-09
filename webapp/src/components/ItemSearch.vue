@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,17 +66,33 @@ async function createItem() {
 function addExistingItem(item: Item) {
   emit("add", item);
 }
+
+const maxLength = 64;
+const charCount = computed(() => searchQuery.value.length);
 </script>
 
 <template>
   <div class="flex flex-col gap-1">
     <div class="flex gap-3">
-      <Input
-        v-model="searchQuery"
-        placeholder="Rechercher ou créer un élément..."
-        class="flex-1"
-        @keyup.enter="createItem"
-      />
+      <div class="relative flex-1">
+        <Input
+          v-model="searchQuery"
+          placeholder="Rechercher ou créer un élément..."
+          class="pr-12"
+          :maxlength="maxLength"
+          @keyup.enter="createItem"
+        />
+        <span
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-xs tabular-nums"
+          :class="
+            charCount >= maxLength
+              ? 'text-destructive'
+              : 'text-muted-foreground'
+          "
+        >
+          {{ charCount }}/{{ maxLength }}
+        </span>
+      </div>
       <Button @click="createItem" :disabled="!searchQuery.trim() || isLoading">
         Ajouter
       </Button>

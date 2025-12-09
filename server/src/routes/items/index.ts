@@ -131,8 +131,8 @@ router.post("/", async (req, res): Promise<void> => {
       return;
     }
 
-    if (trimmedName.length > 100) {
-      res.status(400).json({ error: "Name must be 100 characters or less" });
+    if (trimmedName.length > 64) {
+      res.status(400).json({ error: "Name must be 64 characters or less" });
       return;
     }
 

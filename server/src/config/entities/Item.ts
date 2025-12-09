@@ -13,7 +13,7 @@ export class Item {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 64 })
   name: string;
 
   @ManyToOne(() => User)
