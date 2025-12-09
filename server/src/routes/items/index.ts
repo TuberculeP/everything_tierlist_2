@@ -2,7 +2,7 @@ import { Router } from "express";
 import AppDataSource from "../../config/db.config";
 import { Item } from "../../config/entities/Item";
 import { Vote } from "../../config/entities/Vote";
-import { Like } from "typeorm";
+import { Like, Not, IsNull, And } from "typeorm";
 
 const router = Router();
 
@@ -22,13 +22,14 @@ router.get("/", async (req, res) => {
     if (query.length > 0) {
       items = await itemRepository.find({
         where: {
-          name: Like(`%${query}%`),
+          name: And(Not(IsNull()), Like(`%${query}%`)),
         },
         order: { name: "ASC" },
         take: 20,
       });
     } else {
       items = await itemRepository.find({
+        where: { name: Not(IsNull()) },
         order: { createdAt: "DESC" },
         take: 20,
       });
@@ -62,6 +63,7 @@ router.get("/my-unvoted", async (req, res): Promise<void> => {
         { userId },
       )
       .where("item.user_id = :userId", { userId })
+      .andWhere("item.name IS NOT NULL")
       .andWhere("vote.id IS NULL")
       .orderBy("item.created_at", "DESC")
       .getMany();
@@ -87,7 +89,8 @@ router.get("/recommendations", async (req, res): Promise<void> => {
     // Get random items that user hasn't voted on
     const items = await itemRepository
       .createQueryBuilder("item")
-      .where((qb) => {
+      .where("item.name IS NOT NULL")
+      .andWhere((qb) => {
         const subQuery = qb
           .subQuery()
           .select("1")
@@ -141,7 +144,8 @@ router.post("/", async (req, res): Promise<void> => {
     // Check if item already exists (case insensitive)
     const existing = await itemRepository
       .createQueryBuilder("item")
-      .where("LOWER(item.name) = LOWER(:name)", { name: trimmedName })
+      .where("item.name IS NOT NULL")
+      .andWhere("LOWER(item.name) = LOWER(:name)", { name: trimmedName })
       .getOne();
 
     if (existing) {

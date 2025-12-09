@@ -1,6 +1,7 @@
 import { Router } from "express";
 import AppDataSource from "../../config/db.config";
 import { Vote } from "../../config/entities/Vote";
+import { Not, IsNull } from "typeorm";
 
 const router = Router();
 
@@ -100,12 +101,13 @@ router.get("/stats/:itemId", async (req, res): Promise<void> => {
       .select("vote.tier", "tier")
       .addSelect("COUNT(*)", "count")
       .where("vote.item_id = :itemId", { itemId })
+      .andWhere("vote.tier IS NOT NULL")
       .groupBy("vote.tier")
       .getRawMany();
 
     // Get total votes
     const totalVotes = await voteRepository.count({
-      where: { itemId },
+      where: { itemId, tier: Not(IsNull()) },
     });
 
     // Format the response with all tiers (even if 0 votes)
@@ -144,7 +146,7 @@ router.get("/my", async (req, res): Promise<void> => {
     const voteRepository = getVoteRepository();
 
     const votes = await voteRepository.find({
-      where: { userId },
+      where: { userId, tier: Not(IsNull()) },
       relations: ["item"],
     });
 
