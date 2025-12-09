@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-background px-4">
+  <div class="flex items-center justify-center py-20">
     <Card class="w-full max-w-sm">
       <CardHeader class="space-y-1">
         <CardTitle class="text-2xl">Connexion</CardTitle>

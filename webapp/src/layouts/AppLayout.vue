@@ -5,10 +5,10 @@
       class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
       <div
-        class="container flex h-14 max-w-screen-xl items-center justify-between px-4 mx-auto"
+        class="flex h-14 max-w-5xl items-center justify-between px-6 mx-auto"
       >
         <div class="flex items-center gap-2">
-          <h1 class="text-lg font-semibold">Tier List de Tout</h1>
+          <h1 class="text-lg font-semibold">Everything Tierlist</h1>
         </div>
 
         <div v-if="isAuthenticated" class="flex items-center gap-4">
@@ -23,7 +23,7 @@
     </header>
 
     <!-- Main content -->
-    <main class="container max-w-screen-xl mx-auto px-4 py-6">
+    <main class="mx-auto max-w-5xl px-6 py-8">
       <slot />
     </main>
   </div>

@@ -3,8 +3,6 @@ import { ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import apiClient from "@/lib/utils/apiClient";
 import type { Item } from "@/lib/utils/types";
 
@@ -71,55 +69,30 @@ function addExistingItem(item: Item) {
 </script>
 
 <template>
-  <Card>
-    <CardHeader class="pb-4">
-      <CardTitle>Ajouter un élément</CardTitle>
-    </CardHeader>
-    <CardContent class="space-y-4">
-      <div class="flex gap-2">
-        <Input
-          v-model="searchQuery"
-          placeholder="Rechercher ou créer un élément..."
-          class="flex-1"
-          @keyup.enter="createItem"
-        />
-        <Button
-          @click="createItem"
-          :disabled="!searchQuery.trim() || isLoading"
-        >
-          Ajouter
-        </Button>
-      </div>
+  <div class="flex flex-col gap-1">
+    <div class="flex gap-3">
+      <Input
+        v-model="searchQuery"
+        placeholder="Rechercher ou créer un élément..."
+        class="flex-1"
+        @keyup.enter="createItem"
+      />
+      <Button @click="createItem" :disabled="!searchQuery.trim() || isLoading">
+        Ajouter
+      </Button>
+    </div>
 
-      <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
+    <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
-      <div v-if="isLoading" class="text-sm text-muted-foreground">
-        Chargement...
-      </div>
+    <div v-if="isLoading" class="text-sm text-muted-foreground">
+      Chargement...
+    </div>
 
-      <div v-else-if="suggestions.length > 0" class="space-y-3">
-        <p class="text-sm text-muted-foreground">
-          {{ searchQuery ? "Suggestions" : "Éléments récents" }}
-        </p>
-        <div class="flex flex-wrap gap-2">
-          <Badge
-            v-for="item in suggestions"
-            :key="item.id"
-            variant="outline"
-            class="cursor-pointer hover:bg-accent px-3 py-1.5"
-            @click="addExistingItem(item)"
-          >
-            {{ item.name }}
-          </Badge>
-        </div>
-      </div>
-
-      <p
-        v-else-if="searchQuery && !isLoading"
-        class="text-sm text-muted-foreground"
-      >
-        Aucun résultat. Cliquez sur "Ajouter" pour créer "{{ searchQuery }}".
-      </p>
-    </CardContent>
-  </Card>
+    <p
+      v-else-if="searchQuery && !isLoading"
+      class="text-sm text-muted-foreground"
+    >
+      Aucun résultat. Cliquez sur "Ajouter" pour créer "{{ searchQuery }}".
+    </p>
+  </div>
 </template>

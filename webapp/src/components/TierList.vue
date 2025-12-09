@@ -150,16 +150,23 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="flex flex-col gap-8">
+    <p class="text-muted-foreground leading-relaxed">
+      La Everything Tierlist est une tierlist sur laquelle vous devez tout
+      trier, sans distinction.<br />Tous les éléments que vous créez seront
+      disponible pour l'intégralité des utilisateurs. Vous pouvez ensuite
+      double-cliquer sur un élément pour voir ses statistiques.
+    </p>
+
     <!-- Search -->
     <ItemSearch @add="handleAddItem" />
 
     <!-- Tier List -->
     <Card>
-      <CardHeader class="pb-4">
+      <CardHeader class="pb-3">
         <CardTitle>Classement</CardTitle>
       </CardHeader>
-      <CardContent class="space-y-2">
+      <CardContent class="flex flex-col gap-2">
         <div
           v-for="tier in tiers"
           :key="tier.id"
@@ -199,7 +206,7 @@ onMounted(async () => {
 
     <!-- My unvoted items -->
     <Card v-if="myUnvotedItems.length > 0">
-      <CardHeader class="pb-4">
+      <CardHeader class="pb-3">
         <CardTitle class="text-base">Mes créations à trier</CardTitle>
       </CardHeader>
       <CardContent>
@@ -229,7 +236,7 @@ onMounted(async () => {
 
     <!-- Recommendations -->
     <Card v-if="recommendations.length > 0">
-      <CardHeader class="pb-4">
+      <CardHeader class="pb-3">
         <CardTitle class="text-base">Recommandations</CardTitle>
       </CardHeader>
       <CardContent>
@@ -258,11 +265,9 @@ onMounted(async () => {
     </Card>
 
     <!-- Manually added items -->
-    <Card v-if="unrankedItems.length > 0">
-      <CardHeader class="pb-4">
-        <CardTitle class="text-base">Éléments à classer</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div v-if="unrankedItems.length > 0">
+      <h2 class="text-base mb-1">Éléments à classer</h2>
+      <div>
         <draggable
           v-model="unrankedItems"
           group="tierlist"
@@ -284,8 +289,8 @@ onMounted(async () => {
             </Badge>
           </template>
         </draggable>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
 
     <!-- Stats Modal -->
     <ItemStatsModal :item="selectedItem" v-model:open="statsModalOpen" />
