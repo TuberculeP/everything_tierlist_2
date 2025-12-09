@@ -62,7 +62,22 @@
                     {{ getRank(index) }}
                   </span>
                 </TableCell>
-                <TableCell>{{ item.name }}</TableCell>
+                <TableCell>
+                  <span class="flex items-center gap-1.5">
+                    {{ item.name }}
+                    <span
+                      v-if="item.userId === user?.id"
+                      class="group relative inline-flex"
+                    >
+                      <UserRound class="w-3.5 h-3.5 text-muted-foreground" />
+                      <span
+                        class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 text-xs rounded bg-popover border shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        L'une de vos propositions
+                      </span>
+                    </span>
+                  </span>
+                </TableCell>
                 <TableCell class="text-right">
                   <Badge :variant="getScoreVariant(item.score)">
                     {{ item.score > 0 ? "+" : "" }}{{ item.score }}
@@ -139,6 +154,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "@/stores/authStore";
 import apiClient from "@/lib/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,6 +181,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   BarChart3,
+  UserRound,
 } from "lucide-vue-next";
 import ItemStatsModal from "@/components/ItemStatsModal.vue";
 import type { Item } from "@/lib/utils/types";
@@ -171,6 +189,7 @@ import type { Item } from "@/lib/utils/types";
 interface LeaderboardItem {
   id: string;
   name: string;
+  userId: string;
   score: number;
   voteCount: number;
 }
@@ -186,6 +205,8 @@ interface LeaderboardResponse {
   items: LeaderboardItem[];
   pagination: Pagination;
 }
+
+const { user } = storeToRefs(useAuthStore());
 
 const items = ref<LeaderboardItem[]>([]);
 const loading = ref(true);

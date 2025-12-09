@@ -75,6 +75,7 @@ const tiers = ref<Tier[]>([
 const unrankedItems = ref<Item[]>([]);
 const ignoredItems = ref<Item[]>([]);
 const loadingRecommendations = ref(false);
+const userCount = ref<number | null>(null);
 
 // Items already voted on (in tiers or ignored) - these should never reappear
 const votedItemIds = computed(() => {
@@ -161,6 +162,12 @@ async function refreshRecommendations() {
 }
 
 onMounted(async () => {
+  // Fetch user count
+  const statsResponse = await apiClient.get<{ userCount: number }>("/stats");
+  if (statsResponse.data) {
+    userCount.value = statsResponse.data.userCount;
+  }
+
   // Load existing votes into tiers
   const votesResponse = await apiClient.get<{ votes: Vote[] }>("/votes/my");
   if (votesResponse.data?.votes) {
@@ -189,9 +196,10 @@ onMounted(async () => {
   <div class="flex flex-col gap-8">
     <p class="text-muted-foreground leading-relaxed">
       La Everything Tierlist est une tierlist sur laquelle vous devez tout
-      trier, sans distinction.<br />Tous les éléments que vous créez seront
-      disponible pour l'intégralité des utilisateurs. Vous pouvez ensuite
-      double-cliquer sur un élément pour voir ses statistiques.
+      trier, sans distinction, les propositions de
+      {{ userCount ?? "..." }} utilisateurs.<br />Tous les éléments que vous
+      créez seront disponible pour l'intégralité des utilisateurs. Vous pouvez
+      ensuite double-cliquer sur un élément pour voir ses statistiques.
     </p>
 
     <!-- Search -->

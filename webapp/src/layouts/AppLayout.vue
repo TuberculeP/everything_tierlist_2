@@ -7,7 +7,9 @@
       <div class="flex h-14 max-w-5xl mx-auto px-6 items-center gap-6">
         <!-- Logo -->
         <h1 class="text-lg font-semibold flex items-center gap-2 shrink-0">
-          Everything Tierlist <Badge variant="outline">alpha</Badge>
+          <!-- <img src="/et_logo.png" alt="Everything Tierlist" width="100" /> -->
+          Everything Tierlist
+          <Badge variant="outline">alpha</Badge>
         </h1>
 
         <template v-if="isAuthenticated">

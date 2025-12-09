@@ -66,6 +66,7 @@ router.get("/leaderboard", async (req, res): Promise<void> => {
       SELECT
         i.id,
         i.name,
+        i.user_id as "userId",
         i.created_at as "createdAt",
         COALESCE(SUM(
           CASE v.tier
@@ -81,7 +82,7 @@ router.get("/leaderboard", async (req, res): Promise<void> => {
       FROM item i
       LEFT JOIN vote v ON v.item_id = i.id
       WHERE i.name IS NOT NULL
-      GROUP BY i.id, i.name, i.created_at
+      GROUP BY i.id, i.name, i.user_id, i.created_at
       ORDER BY score ${sortOrder}, "voteCount" DESC
       LIMIT $1 OFFSET $2
     `,
