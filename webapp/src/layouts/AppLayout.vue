@@ -1,8 +1,12 @@
 <template>
   <div class="min-h-screen bg-background">
     <!-- Header -->
-    <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div class="container flex h-14 max-w-screen-xl items-center justify-between px-4 mx-auto">
+    <header
+      class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    >
+      <div
+        class="container flex h-14 max-w-screen-xl items-center justify-between px-4 mx-auto"
+      >
         <div class="flex items-center gap-2">
           <h1 class="text-lg font-semibold">Tier List de Tout</h1>
         </div>

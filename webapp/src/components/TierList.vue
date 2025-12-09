@@ -99,7 +99,10 @@ function removeFromUnrankedLists(itemId: string) {
   recommendations.value = recommendations.value.filter((i) => i.id !== itemId);
 }
 
-async function handleTierChange(tierName: string, event: { added?: { element: Item } }) {
+async function handleTierChange(
+  tierName: string,
+  event: { added?: { element: Item } },
+) {
   if (event.added) {
     const item = event.added.element;
     removeFromUnrankedLists(item.id);
@@ -122,7 +125,7 @@ onMounted(async () => {
   if (votesResponse.data?.votes) {
     for (const vote of votesResponse.data.votes) {
       const tier = tiers.value.find(
-        (t) => t.name.toUpperCase() === vote.tier.toUpperCase()
+        (t) => t.name.toUpperCase() === vote.tier.toUpperCase(),
       );
       if (tier && vote.item) {
         tier.items.push(vote.item);
@@ -130,12 +133,16 @@ onMounted(async () => {
     }
   }
 
-  const myUnvotedResponse = await apiClient.get<{ items: Item[] }>("/items/my-unvoted");
+  const myUnvotedResponse = await apiClient.get<{ items: Item[] }>(
+    "/items/my-unvoted",
+  );
   if (myUnvotedResponse.data?.items) {
     myUnvotedItems.value = myUnvotedResponse.data.items;
   }
 
-  const recommendationsResponse = await apiClient.get<{ items: Item[] }>("/items/recommendations");
+  const recommendationsResponse = await apiClient.get<{ items: Item[] }>(
+    "/items/recommendations",
+  );
   if (recommendationsResponse.data?.items) {
     recommendations.value = recommendationsResponse.data.items;
   }
@@ -281,10 +288,7 @@ onMounted(async () => {
     </Card>
 
     <!-- Stats Modal -->
-    <ItemStatsModal
-      :item="selectedItem"
-      v-model:open="statsModalOpen"
-    />
+    <ItemStatsModal :item="selectedItem" v-model:open="statsModalOpen" />
   </div>
 </template>
 

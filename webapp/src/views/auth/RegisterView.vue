@@ -72,7 +72,14 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import apiClient from "@/lib/utils/apiClient";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -102,7 +109,9 @@ async function submitForm() {
       router.push({ name: "app-login" });
     }, 1500);
   } else {
-    error.value = result.error.response?.data?.error || "Erreur lors de la création du compte";
+    error.value =
+      result.error.response?.data?.error ||
+      "Erreur lors de la création du compte";
   }
 
   isLoading.value = false;

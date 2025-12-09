@@ -58,7 +58,9 @@ const pieChartStyle = computed(() => {
     const count = stats.value.tiers[tier] || 0;
     const percent = (count / stats.value.totalVotes) * 100;
     if (percent > 0) {
-      segments.push(`${tierColors[tier]} ${currentPercent}% ${currentPercent + percent}%`);
+      segments.push(
+        `${tierColors[tier]} ${currentPercent}% ${currentPercent + percent}%`,
+      );
       currentPercent += percent;
     }
   }
@@ -78,14 +80,16 @@ watch(
   async (newItem) => {
     if (newItem) {
       isLoading.value = true;
-      const response = await apiClient.get<VoteStats>(`/votes/stats/${newItem.id}`);
+      const response = await apiClient.get<VoteStats>(
+        `/votes/stats/${newItem.id}`,
+      );
       if (response.data) {
         stats.value = response.data;
       }
       isLoading.value = false;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function handleOpenChange(value: boolean) {
@@ -111,10 +115,7 @@ function handleOpenChange(value: boolean) {
       <div v-else-if="stats" class="space-y-6">
         <!-- Pie Chart -->
         <div class="flex justify-center">
-          <div
-            class="w-40 h-40 rounded-full"
-            :style="pieChartStyle"
-          />
+          <div class="w-40 h-40 rounded-full" :style="pieChartStyle" />
         </div>
 
         <!-- Total votes -->
@@ -142,7 +143,13 @@ function handleOpenChange(value: boolean) {
             <div class="flex items-center gap-2">
               <span class="font-bold">{{ stats.tiers[tier] || 0 }}</span>
               <span class="text-muted-foreground text-sm">
-                ({{ stats.totalVotes > 0 ? Math.round((stats.tiers[tier] || 0) / stats.totalVotes * 100) : 0 }}%)
+                ({{
+                  stats.totalVotes > 0
+                    ? Math.round(
+                        ((stats.tiers[tier] || 0) / stats.totalVotes) * 100,
+                      )
+                    : 0
+                }}%)
               </span>
             </div>
           </div>

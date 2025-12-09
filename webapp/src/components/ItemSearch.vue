@@ -22,7 +22,7 @@ const fetchSuggestions = useDebounceFn(async (query: string) => {
   error.value = "";
 
   const response = await apiClient.get<{ items: Item[] }>(
-    `/items?q=${encodeURIComponent(query)}`
+    `/items?q=${encodeURIComponent(query)}`,
   );
 
   if (response.error) {
@@ -50,7 +50,7 @@ async function createItem() {
     "/items",
     {
       name: searchQuery.value.trim(),
-    }
+    },
   );
 
   if (response.error) {
@@ -83,7 +83,10 @@ function addExistingItem(item: Item) {
           class="flex-1"
           @keyup.enter="createItem"
         />
-        <Button @click="createItem" :disabled="!searchQuery.trim() || isLoading">
+        <Button
+          @click="createItem"
+          :disabled="!searchQuery.trim() || isLoading"
+        >
           Ajouter
         </Button>
       </div>

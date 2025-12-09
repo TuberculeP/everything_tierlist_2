@@ -52,7 +52,14 @@ import { reactive, ref } from "vue";
 import apiClient from "@/lib/utils/apiClient";
 import { useRouter } from "vue-router";
 import type { User } from "@/lib/utils/types";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
