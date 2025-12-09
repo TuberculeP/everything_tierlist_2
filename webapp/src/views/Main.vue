@@ -1,7 +1,7 @@
 <template>
-  <div>
-    <h1>Accueil</h1>
-  </div>
+  <TierList />
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import TierList from "@/components/TierList.vue";
+</script>

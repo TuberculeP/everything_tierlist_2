@@ -26,3 +26,10 @@ export type User = {
   receivedMessages: Record<string, any>[];
   createdAt: Date;
 };
+
+export type Item = {
+  id: string;
+  name: string;
+  userId: string;
+  createdAt: Date;
+};
