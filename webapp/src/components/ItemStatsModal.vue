@@ -44,9 +44,22 @@ const tierLabels: Record<string, string> = {
   D: "D - Mauvais",
 };
 
-// Generate pie chart gradient
+// Count of votes excluding IGNORED
+const actualVotes = computed(() => {
+  if (!stats.value) return 0;
+  return ["S", "A", "B", "C", "D"].reduce(
+    (sum, tier) => sum + (stats.value!.tiers[tier] || 0),
+    0,
+  );
+});
+
+const ignoredCount = computed(() => {
+  return stats.value?.tiers["IGNORED"] || 0;
+});
+
+// Generate pie chart gradient (excluding IGNORED)
 const pieChartStyle = computed(() => {
-  if (!stats.value || stats.value.totalVotes === 0) {
+  if (!stats.value || actualVotes.value === 0) {
     return { background: "#e5e7eb" }; // gray-200
   }
 
@@ -56,7 +69,7 @@ const pieChartStyle = computed(() => {
 
   for (const tier of tiers) {
     const count = stats.value.tiers[tier] || 0;
-    const percent = (count / stats.value.totalVotes) * 100;
+    const percent = (count / actualVotes.value) * 100;
     if (percent > 0) {
       segments.push(
         `${tierColors[tier]} ${currentPercent}% ${currentPercent + percent}%`,
@@ -120,11 +133,20 @@ function handleOpenChange(value: boolean) {
 
         <!-- Total votes -->
         <div class="text-center">
-          <span class="text-2xl font-bold">{{ stats.totalVotes }}</span>
+          <span class="text-2xl font-bold">{{ actualVotes }}</span>
           <span class="text-muted-foreground ml-2">
-            vote{{ stats.totalVotes > 1 ? "s" : "" }}
+            vote{{ actualVotes > 1 ? "s" : "" }}
           </span>
         </div>
+
+        <!-- Ignored count -->
+        <p
+          v-if="ignoredCount > 0"
+          class="text-center text-sm text-muted-foreground"
+        >
+          {{ ignoredCount }} utilisateur{{ ignoredCount > 1 ? "s ont" : " a" }}
+          refusé de voter
+        </p>
 
         <!-- Legend / Breakdown -->
         <div class="space-y-2">
@@ -144,10 +166,8 @@ function handleOpenChange(value: boolean) {
               <span class="font-bold">{{ stats.tiers[tier] || 0 }}</span>
               <span class="text-muted-foreground text-sm">
                 ({{
-                  stats.totalVotes > 0
-                    ? Math.round(
-                        ((stats.tiers[tier] || 0) / stats.totalVotes) * 100,
-                      )
+                  actualVotes > 0
+                    ? Math.round(((stats.tiers[tier] || 0) / actualVotes) * 100)
                     : 0
                 }}%)
               </span>

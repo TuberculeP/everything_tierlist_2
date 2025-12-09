@@ -73,6 +73,7 @@ const tiers = ref<Tier[]>([
 const unrankedItems = ref<Item[]>([]);
 const myUnvotedItems = ref<Item[]>([]);
 const recommendations = ref<Item[]>([]);
+const ignoredItems = ref<Item[]>([]);
 
 // Get all items currently in use (in tiers or any unranked section)
 const usedItemIds = computed(() => {
@@ -80,10 +81,20 @@ const usedItemIds = computed(() => {
   unrankedItems.value.forEach((item) => ids.add(item.id));
   myUnvotedItems.value.forEach((item) => ids.add(item.id));
   recommendations.value.forEach((item) => ids.add(item.id));
+  ignoredItems.value.forEach((item) => ids.add(item.id));
   tiers.value.forEach((tier) => {
     tier.items.forEach((item) => ids.add(item.id));
   });
   return ids;
+});
+
+// Check if there are items to sort
+const hasItemsToSort = computed(() => {
+  return (
+    unrankedItems.value.length > 0 ||
+    myUnvotedItems.value.length > 0 ||
+    recommendations.value.length > 0
+  );
 });
 
 function handleAddItem(item: Item) {
@@ -97,6 +108,7 @@ function removeFromUnrankedLists(itemId: string) {
   unrankedItems.value = unrankedItems.value.filter((i) => i.id !== itemId);
   myUnvotedItems.value = myUnvotedItems.value.filter((i) => i.id !== itemId);
   recommendations.value = recommendations.value.filter((i) => i.id !== itemId);
+  ignoredItems.value = ignoredItems.value.filter((i) => i.id !== itemId);
 }
 
 async function handleTierChange(
@@ -120,10 +132,31 @@ async function handleUnrankedChange(event: { added?: { element: Item } }) {
   }
 }
 
+async function handleIgnoredChange(event: { added?: { element: Item } }) {
+  if (event.added) {
+    const item = event.added.element;
+    removeFromUnrankedLists(item.id);
+    // Re-add to ignored list since removeFromUnrankedLists removes it
+    if (!ignoredItems.value.find((i) => i.id === item.id)) {
+      ignoredItems.value.push(item);
+    }
+    await apiClient.post("/votes", {
+      itemId: item.id,
+      tier: "IGNORED",
+    });
+  }
+}
+
 onMounted(async () => {
   const votesResponse = await apiClient.get<{ votes: Vote[] }>("/votes/my");
   if (votesResponse.data?.votes) {
     for (const vote of votesResponse.data.votes) {
+      if (vote.tier.toUpperCase() === "IGNORED") {
+        if (vote.item) {
+          ignoredItems.value.push(vote.item);
+        }
+        continue;
+      }
       const tier = tiers.value.find(
         (t) => t.name.toUpperCase() === vote.tier.toUpperCase(),
       );
@@ -264,29 +297,54 @@ onMounted(async () => {
       </CardContent>
     </Card>
 
-    <!-- Manually added items -->
-    <div v-if="unrankedItems.length > 0">
-      <h2 class="text-base mb-1">Éléments à classer</h2>
-      <div>
+    <!-- Manually added items and Ignored zone side by side -->
+    <div class="flex gap-4">
+      <!-- Manually added items -->
+      <div v-if="unrankedItems.length > 0" class="flex-1">
+        <h2 class="text-base mb-1">Éléments à classer</h2>
+        <div>
+          <draggable
+            v-model="unrankedItems"
+            group="tierlist"
+            item-key="id"
+            class="flex flex-wrap gap-2 min-h-14 p-3 border border-dashed rounded-md"
+            ghost-class="dragging-ghost"
+            chosen-class="dragging-chosen"
+            :delay="100"
+            :delay-on-touch-only="true"
+            @change="handleUnrankedChange"
+          >
+            <template #item="{ element }">
+              <Badge
+                variant="outline"
+                class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-accent"
+                @dblclick="openStatsModal(element)"
+              >
+                {{ element.name }}
+              </Badge>
+            </template>
+          </draggable>
+        </div>
+      </div>
+
+      <!-- Ignored/Trash zone -->
+      <div v-if="hasItemsToSort" class="w-48 shrink-0">
+        <h2 class="text-base mb-1 text-muted-foreground">
+          🗑️ Je refuse de trier ça
+        </h2>
         <draggable
-          v-model="unrankedItems"
-          group="tierlist"
+          v-model="ignoredItems"
+          :group="{ name: 'tierlist', pull: false }"
           item-key="id"
-          class="flex flex-wrap gap-2 min-h-14 p-3 border border-dashed rounded-md"
+          class="min-h-14 p-3 border border-dashed border-gray-300 bg-gray-50/50 rounded-md"
           ghost-class="dragging-ghost"
           chosen-class="dragging-chosen"
           :delay="100"
           :delay-on-touch-only="true"
-          @change="handleUnrankedChange"
+          @change="handleIgnoredChange"
         >
           <template #item="{ element }">
-            <Badge
-              variant="outline"
-              class="cursor-grab active:cursor-grabbing px-3 py-1.5 text-sm hover:bg-accent"
-              @dblclick="openStatsModal(element)"
-            >
-              {{ element.name }}
-            </Badge>
+            <span :key="element.id" class="sr-only">{{ element.name }}</span>
           </template>
         </draggable>
       </div>

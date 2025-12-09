@@ -8,7 +8,7 @@ function getVoteRepository() {
   return AppDataSource.getRepository(Vote);
 }
 
-const VALID_TIERS = ["S", "A", "B", "C", "D"];
+const VALID_TIERS = ["S", "A", "B", "C", "D", "IGNORED"];
 
 // POST /api/votes - Create or update a vote (upsert)
 router.post("/", async (req, res): Promise<void> => {
@@ -34,7 +34,7 @@ router.post("/", async (req, res): Promise<void> => {
     const upperTier = tier.toUpperCase();
 
     if (!VALID_TIERS.includes(upperTier)) {
-      res.status(400).json({ error: "tier must be S, A, B, C, or D" });
+      res.status(400).json({ error: "tier must be S, A, B, C, D, or IGNORED" });
       return;
     }
 
@@ -109,7 +109,14 @@ router.get("/stats/:itemId", async (req, res): Promise<void> => {
     });
 
     // Format the response with all tiers (even if 0 votes)
-    const tierCounts: Record<string, number> = { S: 0, A: 0, B: 0, C: 0, D: 0 };
+    const tierCounts: Record<string, number> = {
+      S: 0,
+      A: 0,
+      B: 0,
+      C: 0,
+      D: 0,
+      IGNORED: 0,
+    };
     for (const stat of stats) {
       tierCounts[stat.tier] = parseInt(stat.count, 10);
     }
