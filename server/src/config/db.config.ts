@@ -19,8 +19,9 @@ if (POSTGRES_URL) {
   pg = new DataSource({
     type: "postgres",
     url: POSTGRES_URL,
-    synchronize: true,
+    synchronize: !isProd, // DÉSACTIVÉ en prod - les migrations gèrent le schéma
     entities,
+    migrations: [__dirname + "/../migrations/*.js"],
     migrationsTableName: "migration_table",
   });
 } else {
@@ -28,9 +29,8 @@ if (POSTGRES_URL) {
   pg = new DataSource({
     type: "sqlite",
     database: "sqlite.db",
-    synchronize: !isProd,
+    synchronize: true,
     entities,
-    migrations: [__dirname + "/../migrations/*.js"],
     migrationsTableName: "migration_table",
   });
 }
