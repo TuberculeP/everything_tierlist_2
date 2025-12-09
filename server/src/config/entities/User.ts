@@ -15,11 +15,14 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password?: string;
 
   @Column()
   pseudo: string;
+
+  @Column({ nullable: true, unique: true })
+  googleId?: string;
 
   @Column({ default: true })
   isActive: boolean;

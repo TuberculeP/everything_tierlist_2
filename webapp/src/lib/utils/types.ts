@@ -14,6 +14,7 @@ export type User = {
   id: string;
   email: string;
   pseudo: string;
+  googleId?: string;
   isActive: boolean;
   role: string;
   following: User[];

@@ -75,6 +75,22 @@ authRouter.post("/logout", (req, res) => {
   });
 });
 
+// Google OAuth routes
+authRouter.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+);
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login?error=google_auth_failed",
+  }),
+  (_req, res) => {
+    res.redirect("/");
+  },
+);
+
 // PATCH /api/auth/user - Update user pseudo
 authRouter.patch("/user", async (req, res): Promise<void> => {
   if (!req.isAuthenticated() || !req.user) {

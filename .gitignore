@@ -48,3 +48,6 @@ logs
 
 # Ignore uploads directory
 /public/uploads/**/*
+
+.env
+.env.*
