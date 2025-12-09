@@ -75,4 +75,40 @@ authRouter.post("/logout", (req, res) => {
   });
 });
 
+// PATCH /api/auth/user - Update user pseudo
+authRouter.patch("/user", async (req, res): Promise<void> => {
+  if (!req.isAuthenticated() || !req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { pseudo } = req.body;
+
+  if (!pseudo || typeof pseudo !== "string") {
+    res.status(400).json({ error: "Pseudo is required" });
+    return;
+  }
+
+  const trimmedPseudo = pseudo.trim();
+
+  if (trimmedPseudo.length < 1) {
+    res.status(400).json({ error: "Pseudo cannot be empty" });
+    return;
+  }
+
+  if (trimmedPseudo.length > 50) {
+    res.status(400).json({ error: "Pseudo must be 50 characters or less" });
+    return;
+  }
+
+  const userId = (req.user as { id: string }).id;
+  const userRepository = pg.getRepository(User);
+
+  await userRepository.update(userId, { pseudo: trimmedPseudo });
+
+  const updatedUser = await userRepository.findOne({ where: { id: userId } });
+
+  res.json({ user: updatedUser });
+});
+
 export default authRouter;

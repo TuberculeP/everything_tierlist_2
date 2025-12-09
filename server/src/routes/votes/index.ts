@@ -157,4 +157,36 @@ router.get("/my", async (req, res): Promise<void> => {
   }
 });
 
+// GET /api/votes/ignored - Get current user's ignored items
+router.get("/ignored", async (req, res): Promise<void> => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userId = (req.user as { id: string }).id;
+    const voteRepository = getVoteRepository();
+
+    const votes = await voteRepository.find({
+      where: { userId, tier: "IGNORED" },
+      relations: ["item"],
+      order: { modifiedAt: "DESC" },
+    });
+
+    // Return items with their vote info
+    const items = votes
+      .filter((v) => v.item && v.item.name)
+      .map((v) => ({
+        ...v.item,
+        ignoredAt: v.modifiedAt,
+      }));
+
+    res.json({ items });
+  } catch (error) {
+    console.error("Error fetching ignored items:", error);
+    res.status(500).json({ error: "Failed to fetch ignored items" });
+  }
+});
+
 export default router;

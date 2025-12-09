@@ -42,6 +42,29 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/items/my - All items created by user
+router.get("/my", async (req, res): Promise<void> => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userId = (req.user as { id: string }).id;
+    const itemRepository = getItemRepository();
+
+    const items = await itemRepository.find({
+      where: { userId, name: Not(IsNull()) },
+      order: { createdAt: "DESC" },
+    });
+
+    res.json({ items });
+  } catch (error) {
+    console.error("Error fetching user items:", error);
+    res.status(500).json({ error: "Failed to fetch items" });
+  }
+});
+
 // GET /api/items/my-unvoted - Items created by user that they haven't voted on
 router.get("/my-unvoted", async (req, res): Promise<void> => {
   try {
@@ -164,6 +187,39 @@ router.post("/", async (req, res): Promise<void> => {
   } catch (error) {
     console.error("Error creating item:", error);
     res.status(500).json({ error: "Failed to create item" });
+  }
+});
+
+// DELETE /api/items/:id - Delete an item (only owner can delete)
+router.delete("/:id", async (req, res): Promise<void> => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const { id } = req.params;
+    const userId = (req.user as { id: string }).id;
+    const itemRepository = getItemRepository();
+
+    const item = await itemRepository.findOne({ where: { id } });
+
+    if (!item) {
+      res.status(404).json({ error: "Item not found" });
+      return;
+    }
+
+    if (item.userId !== userId) {
+      res.status(403).json({ error: "You can only delete your own items" });
+      return;
+    }
+
+    await itemRepository.remove(item);
+
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    res.status(500).json({ error: "Failed to delete item" });
   }
 });
 

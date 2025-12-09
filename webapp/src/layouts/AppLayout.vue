@@ -14,11 +14,14 @@
         </div>
 
         <div v-if="isAuthenticated" class="flex items-center gap-4">
-          <span class="text-sm text-muted-foreground">
+          <router-link
+            :to="{ name: 'app-profile' }"
+            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             {{ user?.pseudo }}
-          </span>
+          </router-link>
           <Button variant="outline" size="sm" @click="disconnect">
-            Déconnexion
+            Deconnexion
           </Button>
         </div>
       </div>
