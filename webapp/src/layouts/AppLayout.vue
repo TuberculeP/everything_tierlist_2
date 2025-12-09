@@ -46,7 +46,7 @@
           <a
             href="https://github.com/TuberculeP/everything_tierlist_2/issues/new"
             class="underline hover:text-red-700"
-            >Signaler les bugs !</a
+            >Signaler les bugs (ou proposer des améliorations) !</a
           ><br />
           (Vous pouvez aussi vous amuser à les causer, sous réserve
           d'immédiatement le signaler)
