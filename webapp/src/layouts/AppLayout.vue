@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="min-h-screen bg-background flex flex-col">
     <!-- Header / Navbar -->
     <header
       class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -51,7 +51,7 @@
     </header>
 
     <!-- Main content -->
-    <main class="mx-auto max-w-5xl px-6 py-8">
+    <main class="mx-auto max-w-5xl px-6 py-8 flex-1 w-full">
       <!-- zone d'info de la version alpha-->
       <div
         v-if="alphaActive"
@@ -80,6 +80,23 @@
       </div>
       <slot />
     </main>
+
+    <!-- Footer -->
+    <footer
+      class="border-t py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-4"
+    >
+      <p class="flex items-center justify-center gap-1">
+        Made with <Heart class="w-4 h-4 text-red-500 fill-red-500" /> by Félix
+      </p>
+      <a href="https://ko-fi.com/L3L4NBU2W" target="_blank"
+        ><img
+          height="36"
+          style="border: 0px; height: 36px"
+          src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
+          border="0"
+          alt="Buy Me a Coffee at ko-fi.com"
+      /></a>
+    </footer>
   </div>
 </template>
 
@@ -91,7 +108,7 @@ import apiClient from "../lib/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/ui/badge/Badge.vue";
 import { ref } from "vue";
-import { LayoutGrid, Trophy, LogOut } from "lucide-vue-next";
+import { LayoutGrid, Trophy, LogOut, Heart } from "lucide-vue-next";
 
 const route = useRoute();
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
