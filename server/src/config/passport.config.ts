@@ -40,7 +40,8 @@ export default function initializePassport() {
   );
 
   // Google OAuth Strategy
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } =
+    process.env;
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(
@@ -48,7 +49,7 @@ export default function initializePassport() {
         {
           clientID: GOOGLE_CLIENT_ID,
           clientSecret: GOOGLE_CLIENT_SECRET,
-          callbackURL: "/api/auth/google/callback",
+          callbackURL: GOOGLE_CALLBACK_URL || "/api/auth/google/callback",
         },
         async (_accessToken, _refreshToken, profile, done) => {
           try {
