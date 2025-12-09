@@ -46,6 +46,7 @@
                 <TableHead>Nom</TableHead>
                 <TableHead class="text-right w-24">Score</TableHead>
                 <TableHead class="text-right w-24">Votes</TableHead>
+                <TableHead class="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -69,6 +70,16 @@
                 </TableCell>
                 <TableCell class="text-right text-muted-foreground">
                   {{ item.voteCount }}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    @click="openStatsModal(item)"
+                    title="Voir les statistiques"
+                  >
+                    <BarChart3 class="w-4 h-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             </TableBody>
@@ -120,6 +131,9 @@
         </template>
       </CardContent>
     </Card>
+
+    <!-- Stats Modal -->
+    <ItemStatsModal :item="selectedItem" v-model:open="statsModalOpen" />
   </div>
 </template>
 
@@ -149,7 +163,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  BarChart3,
 } from "lucide-vue-next";
+import ItemStatsModal from "@/components/ItemStatsModal.vue";
+import type { Item } from "@/lib/utils/types";
 
 interface LeaderboardItem {
   id: string;
@@ -175,6 +192,15 @@ const loading = ref(true);
 const sortOrder = ref<"asc" | "desc">("desc");
 const page = ref(1);
 const limit = ref(20);
+
+// Stats modal
+const selectedItem = ref<Item | null>(null);
+const statsModalOpen = ref(false);
+
+function openStatsModal(item: LeaderboardItem) {
+  selectedItem.value = { id: item.id, name: item.name } as Item;
+  statsModalOpen.value = true;
+}
 const pagination = ref<Pagination>({
   page: 1,
   limit: 20,
