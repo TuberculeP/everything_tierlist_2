@@ -3,6 +3,7 @@ import authRouter from "./auth";
 import sharedRouter from "./shared";
 import itemsRouter from "./items";
 import votesRouter from "./votes";
+import pushRouter from "./push";
 import pg from "../config/db.config";
 import { User } from "../config/entities/User";
 
@@ -24,5 +25,6 @@ router.use("/auth", authRouter);
 router.use("/shared", sharedRouter);
 router.use("/items", itemsRouter);
 router.use("/votes", votesRouter);
+router.use("/push", pushRouter);
 
 export default router;

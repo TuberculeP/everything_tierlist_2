@@ -3,6 +3,7 @@ import AppDataSource from "../../config/db.config";
 import { Item } from "../../config/entities/Item";
 import { Vote } from "../../config/entities/Vote";
 import { Like, Not, IsNull, And } from "typeorm";
+import { notifyUsersWithPendingItems } from "../../services/push.service";
 
 const router = Router();
 
@@ -269,6 +270,11 @@ router.post("/", async (req, res): Promise<void> => {
     });
 
     await itemRepository.save(item);
+
+    // Notifier les utilisateurs qui ont des items à trier (fire and forget)
+    notifyUsersWithPendingItems().catch((err) =>
+      console.error("Failed to send push notifications:", err),
+    );
 
     res.status(201).json({ item });
   } catch (error) {

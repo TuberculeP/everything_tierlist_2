@@ -67,6 +67,51 @@
       </CardContent>
     </Card>
 
+    <!-- Notifications Card -->
+    <Card v-if="pushNotifications.isSupported.value">
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          <Bell class="w-5 h-5" />
+          Notifications
+        </CardTitle>
+        <CardDescription>
+          Recevez une notification quand de nouveaux items sont disponibles
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div class="flex items-center justify-between">
+          <div class="space-y-1">
+            <p class="text-sm font-medium">Notifications push</p>
+            <p class="text-xs text-muted-foreground">
+              {{
+                pushNotifications.permission.value === "denied"
+                  ? "Notifications bloquees dans le navigateur"
+                  : pushNotifications.isSubscribed.value
+                    ? "Vous recevrez des notifications"
+                    : "Activez pour etre notifie"
+              }}
+            </p>
+          </div>
+          <Button
+            v-if="pushNotifications.permission.value !== 'denied'"
+            :variant="pushNotifications.isSubscribed.value ? 'outline' : 'default'"
+            size="sm"
+            :disabled="pushNotifications.isLoading.value"
+            @click="toggleNotifications"
+          >
+            {{
+              pushNotifications.isLoading.value
+                ? "..."
+                : pushNotifications.isSubscribed.value
+                  ? "Desactiver"
+                  : "Activer"
+            }}
+          </Button>
+          <Badge v-else variant="destructive">Bloquees</Badge>
+        </div>
+      </CardContent>
+    </Card>
+
     <!-- My Items Card -->
     <Card>
       <CardHeader>
@@ -200,9 +245,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash, Trash2, RotateCcw } from "lucide-vue-next";
+import { Bell, Pencil, Trash, Trash2, RotateCcw } from "lucide-vue-next";
+import { usePushNotifications } from "@/composables/usePushNotifications";
 
 const { user } = storeToRefs(useAuthStore());
+
+// Push notifications
+const pushNotifications = usePushNotifications();
+
+async function toggleNotifications() {
+  if (pushNotifications.isSubscribed.value) {
+    await pushNotifications.unsubscribe();
+  } else {
+    await pushNotifications.subscribe();
+  }
+}
 
 // Pseudo editing
 const editingPseudo = ref(false);
@@ -310,5 +367,6 @@ async function restoreItem(item: Item) {
 onMounted(() => {
   fetchMyItems();
   fetchIgnoredItems();
+  pushNotifications.checkSubscriptionStatus();
 });
 </script>
