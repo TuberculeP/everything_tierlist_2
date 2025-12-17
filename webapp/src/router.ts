@@ -7,6 +7,7 @@ import LeaderboardView from "./views/LeaderboardView.vue";
 import CreateRoomView from "./views/CreateRoomView.vue";
 import RoomView from "./views/RoomView.vue";
 import RoomLeaderboardView from "./views/RoomLeaderboardView.vue";
+import LandingView from "./views/LandingView.vue";
 
 import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
@@ -28,13 +29,30 @@ async function authGuard(to: any, _from: any, next: any) {
   }
 }
 
+async function guestGuard(_to: any, _from: any, next: any) {
+  const authStore = useAuthStore();
+  const check = await apiClient.get<{ user: User }>("/auth/check");
+  if (check.data && check.data.user) {
+    authStore.user = check.data.user;
+    next({ name: "landing-main" });
+  } else {
+    next();
+  }
+}
+
 const routes = [
-  { path: "/", redirect: "/app", name: "home-redirect" },
+  {
+    path: "/",
+    component: LandingView,
+    name: "landing",
+    beforeEnter: guestGuard,
+  },
+  { path: "/leaderboard", component: LeaderboardView, name: "public-leaderboard" },
   { path: "/app", component: Main, name: "landing-main" },
   { path: "/app/profile", component: ProfileView, name: "app-profile" },
   {
     path: "/app/leaderboard",
-    component: LeaderboardView,
+    redirect: "/leaderboard",
     name: "app-leaderboard",
   },
   {

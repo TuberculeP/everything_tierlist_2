@@ -149,7 +149,7 @@ const tabs = computed(() => {
   }
   return [
     { name: "landing-main", label: "Tierlist", icon: LayoutGrid, params: {} },
-    { name: "app-leaderboard", label: "Leaderboard", icon: Trophy, params: {} },
+    { name: "public-leaderboard", label: "Leaderboard", icon: Trophy, params: {} },
   ];
 });
 
