@@ -4,6 +4,9 @@ import LoginView from "./views/auth/LoginView.vue";
 import RegisterView from "./views/auth/RegisterView.vue";
 import ProfileView from "./views/ProfileView.vue";
 import LeaderboardView from "./views/LeaderboardView.vue";
+import CreateRoomView from "./views/CreateRoomView.vue";
+import RoomView from "./views/RoomView.vue";
+import RoomLeaderboardView from "./views/RoomLeaderboardView.vue";
 
 import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
@@ -33,6 +36,21 @@ const routes = [
     path: "/app/leaderboard",
     component: LeaderboardView,
     name: "app-leaderboard",
+  },
+  {
+    path: "/app/rooms/create",
+    component: CreateRoomView,
+    name: "create-room",
+  },
+  {
+    path: "/app/room/:hash",
+    component: RoomView,
+    name: "room-tierlist",
+  },
+  {
+    path: "/app/room/:hash/leaderboard",
+    component: RoomLeaderboardView,
+    name: "room-leaderboard",
   },
   { path: "/login", component: LoginView, name: "app-login" },
   { path: "/register", component: RegisterView, name: "app-register" },

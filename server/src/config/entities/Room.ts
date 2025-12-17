@@ -7,15 +7,20 @@ import {
   JoinColumn,
 } from "typeorm";
 import { User } from "./User";
-import { Room } from "./Room";
 
 @Entity()
-export class Item {
+export class Room {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ length: 64, nullable: true })
+  @Column({ length: 12, unique: true })
+  hash: string;
+
+  @Column({ length: 100 })
   name: string;
+
+  @Column({ type: "text", nullable: true })
+  description: string | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
@@ -26,11 +31,4 @@ export class Item {
 
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
-
-  @ManyToOne(() => Room, { nullable: true, onDelete: "CASCADE" })
-  @JoinColumn({ name: "room_id" })
-  room: Room | null;
-
-  @Column({ name: "room_id", nullable: true })
-  roomId: string | null;
 }

@@ -71,7 +71,17 @@
     <Card>
       <CardHeader>
         <CardTitle class="flex items-center justify-between">
-          <span>Mes items ({{ myItems.length }})</span>
+          <span>Mes items ({{ filteredItems.length }})</span>
+          <select
+            v-model="itemsRoomFilter"
+            class="h-9 rounded-md border border-input bg-background px-3 text-sm font-normal"
+          >
+            <option value="all">Toutes les rooms</option>
+            <option value="public">Public uniquement</option>
+            <option v-for="room in myRooms" :key="room.id" :value="room.id">
+              {{ room.name }}
+            </option>
+          </select>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -79,18 +89,26 @@
           Chargement...
         </div>
         <div
-          v-else-if="myItems.length === 0"
+          v-else-if="filteredItems.length === 0"
           class="text-sm text-muted-foreground"
         >
-          Vous n'avez pas encore cree d'item.
+          Aucun item dans cette sélection.
         </div>
         <div v-else class="space-y-2">
           <div
-            v-for="item in myItems"
+            v-for="item in filteredItems"
             :key="item.id"
             class="flex items-center justify-between p-2 rounded-md border"
           >
-            <span class="text-sm">{{ item.name }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sm">{{ item.name }}</span>
+              <Badge v-if="item.room" variant="secondary" class="text-xs">
+                {{ item.room.name }}
+              </Badge>
+              <Badge v-else-if="itemsRoomFilter === 'all'" variant="outline" class="text-xs">
+                Public
+              </Badge>
+            </div>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -99,6 +117,62 @@
             >
               <Trash2 class="w-4 h-4" />
             </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- My Rooms Card -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center justify-between">
+          <span>Mes rooms ({{ myRooms.length }})</span>
+          <router-link to="/app/rooms/create">
+            <Button size="sm">Créer une room</Button>
+          </router-link>
+        </CardTitle>
+        <CardDescription>
+          Les rooms vous permettent de créer des tierlists privées partageables via un lien.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div v-if="loadingRooms" class="text-sm text-muted-foreground">
+          Chargement...
+        </div>
+        <div
+          v-else-if="myRooms.length === 0"
+          class="text-sm text-muted-foreground"
+        >
+          Vous n'avez pas encore créé de room.
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="room in myRooms"
+            :key="room.id"
+            class="flex items-center justify-between p-3 rounded-md border"
+          >
+            <div class="flex-1 min-w-0">
+              <p class="font-medium truncate">{{ room.name }}</p>
+              <p v-if="room.description" class="text-sm text-muted-foreground truncate">
+                {{ room.description }}
+              </p>
+            </div>
+            <div class="flex items-center gap-1 ml-2">
+              <router-link :to="{ name: 'room-tierlist', params: { hash: room.hash } }">
+                <Button variant="ghost" size="icon-sm" title="Ouvrir">
+                  <ExternalLink class="w-4 h-4" />
+                </Button>
+              </router-link>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                @click="confirmDeleteRoom(room)"
+                class="text-destructive hover:text-destructive"
+                title="Supprimer"
+              >
+                <Trash2 class="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -148,7 +222,7 @@
       </CardContent>
     </Card>
 
-    <!-- Delete Confirmation Dialog -->
+    <!-- Delete Item Confirmation Dialog -->
     <Dialog v-model:open="showDeleteDialog">
       <DialogContent>
         <DialogHeader>
@@ -173,15 +247,42 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Room Confirmation Dialog -->
+    <Dialog v-model:open="showDeleteRoomDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Supprimer la room ?</DialogTitle>
+          <DialogDescription>
+            Etes-vous sur de vouloir supprimer "{{ roomToDelete?.name }}" ?
+            Cette action est irreversible et supprimera egalement tous les items
+            et votes associes a cette room.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="showDeleteRoomDialog = false">
+            Annuler
+          </Button>
+          <Button
+            variant="destructive"
+            @click="deleteRoom"
+            :disabled="deletingRoom"
+          >
+            {{ deletingRoom ? "Suppression..." : "Supprimer" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/authStore";
+import { useRoomStore } from "@/stores/roomStore";
 import apiClient from "@/lib/utils/apiClient";
-import type { Item } from "@/lib/utils/types";
+import type { Item, Room } from "@/lib/utils/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,9 +301,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash, Trash2, RotateCcw } from "lucide-vue-next";
+import { Pencil, Trash, Trash2, RotateCcw, ExternalLink } from "lucide-vue-next";
 
 const { user } = storeToRefs(useAuthStore());
+const roomStore = useRoomStore();
 
 // Pseudo editing
 const editingPseudo = ref(false);
@@ -249,10 +351,21 @@ async function savePseudo() {
 // My items
 const myItems = ref<Item[]>([]);
 const loadingItems = ref(true);
+const itemsRoomFilter = ref<string>("all");
+
+const filteredItems = computed(() => {
+  if (itemsRoomFilter.value === "all") {
+    return myItems.value;
+  }
+  if (itemsRoomFilter.value === "public") {
+    return myItems.value.filter((item) => !item.roomId);
+  }
+  return myItems.value.filter((item) => item.roomId === itemsRoomFilter.value);
+});
 
 async function fetchMyItems() {
   loadingItems.value = true;
-  const result = await apiClient.get<{ items: Item[] }>("/items/my");
+  const result = await apiClient.get<{ items: Item[] }>("/items/my?all=true");
   if (result.data) {
     myItems.value = result.data.items;
   }
@@ -307,8 +420,49 @@ async function restoreItem(item: Item) {
   }
 }
 
+// My rooms
+const myRooms = ref<Room[]>([]);
+const loadingRooms = ref(true);
+
+async function fetchMyRooms() {
+  loadingRooms.value = true;
+  const result = await apiClient.get<{ rooms: Room[] }>("/rooms/my");
+  if (result.data) {
+    myRooms.value = result.data.rooms;
+    roomStore.setMyRooms(result.data.rooms);
+  }
+  loadingRooms.value = false;
+}
+
+// Delete room
+const showDeleteRoomDialog = ref(false);
+const roomToDelete = ref<Room | null>(null);
+const deletingRoom = ref(false);
+
+function confirmDeleteRoom(room: Room) {
+  roomToDelete.value = room;
+  showDeleteRoomDialog.value = true;
+}
+
+async function deleteRoom() {
+  if (!roomToDelete.value) return;
+
+  deletingRoom.value = true;
+  const result = await apiClient.delete(`/rooms/${roomToDelete.value.hash}`);
+
+  if (!result.error) {
+    myRooms.value = myRooms.value.filter((r) => r.id !== roomToDelete.value?.id);
+    roomStore.removeRoom(roomToDelete.value.id);
+    showDeleteRoomDialog.value = false;
+  }
+
+  deletingRoom.value = false;
+  roomToDelete.value = null;
+}
+
 onMounted(() => {
   fetchMyItems();
   fetchIgnoredItems();
+  fetchMyRooms();
 });
 </script>

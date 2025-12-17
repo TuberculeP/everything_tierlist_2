@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import apiClient from "@/lib/utils/apiClient";
 import type { Item } from "@/lib/utils/types";
 
+const props = defineProps<{
+  roomId?: string | null;
+}>();
+
 const emit = defineEmits<{
   (e: "add", item: Item): void;
 }>();
@@ -19,8 +23,9 @@ const fetchSuggestions = useDebounceFn(async (query: string) => {
   isLoading.value = true;
   error.value = "";
 
+  const roomQuery = props.roomId ? `&roomId=${props.roomId}` : "";
   const response = await apiClient.get<{ items: Item[] }>(
-    `/items?q=${encodeURIComponent(query)}`,
+    `/items?q=${encodeURIComponent(query)}${roomQuery}`,
   );
 
   if (response.error) {
@@ -48,6 +53,7 @@ async function createItem() {
     "/items",
     {
       name: searchQuery.value.trim(),
+      roomId: props.roomId ?? null,
     },
   );
 

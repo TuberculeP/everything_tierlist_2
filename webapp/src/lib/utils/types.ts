@@ -31,5 +31,17 @@ export type Item = {
   id: string;
   name: string;
   userId: string;
+  roomId: string | null;
+  room?: Room | null;
+  createdAt: Date;
+};
+
+export type Room = {
+  id: string;
+  hash: string;
+  name: string;
+  description: string | null;
+  userId: string;
+  creatorPseudo?: string;
   createdAt: Date;
 };

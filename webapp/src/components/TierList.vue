@@ -10,6 +10,10 @@ import apiClient from "@/lib/utils/apiClient";
 import type { Item } from "@/lib/utils/types";
 import { RefreshCw } from "lucide-vue-next";
 
+const props = defineProps<{
+  roomId?: string | null;
+}>();
+
 // Stats modal state
 const selectedItem = ref<Item | null>(null);
 const statsModalOpen = ref(false);
@@ -116,6 +120,7 @@ async function handleTierChange(
     await apiClient.post("/votes", {
       itemId: item.id,
       tier: tierName,
+      roomId: props.roomId ?? null,
     });
   }
 }
@@ -123,7 +128,8 @@ async function handleTierChange(
 async function handleUnrankedChange(event: { added?: { element: Item } }) {
   if (event.added) {
     const item = event.added.element;
-    await apiClient.delete(`/votes/${item.id}`);
+    const roomQuery = props.roomId ? `?roomId=${props.roomId}` : "";
+    await apiClient.delete(`/votes/${item.id}${roomQuery}`);
   }
 }
 
@@ -138,14 +144,16 @@ async function handleIgnoredChange(event: { added?: { element: Item } }) {
     await apiClient.post("/votes", {
       itemId: item.id,
       tier: "IGNORED",
+      roomId: props.roomId ?? null,
     });
   }
 }
 
 async function fetchRecommendations() {
   loadingRecommendations.value = true;
+  const roomQuery = props.roomId ? `?roomId=${props.roomId}` : "";
   const response = await apiClient.get<{ items: Item[] }>(
-    "/items/recommendations",
+    `/items/recommendations${roomQuery}`,
   );
   if (response.data?.items) {
     // Filter out items already voted on (in tiers or ignored)
@@ -162,14 +170,17 @@ async function refreshRecommendations() {
 }
 
 onMounted(async () => {
-  // Fetch user count
-  const statsResponse = await apiClient.get<{ userCount: number }>("/stats");
-  if (statsResponse.data) {
-    userCount.value = statsResponse.data.userCount;
+  // Fetch user count (only for public tierlist)
+  if (!props.roomId) {
+    const statsResponse = await apiClient.get<{ userCount: number }>("/stats");
+    if (statsResponse.data) {
+      userCount.value = statsResponse.data.userCount;
+    }
   }
 
   // Load existing votes into tiers
-  const votesResponse = await apiClient.get<{ votes: Vote[] }>("/votes/my");
+  const roomQuery = props.roomId ? `?roomId=${props.roomId}` : "";
+  const votesResponse = await apiClient.get<{ votes: Vote[] }>(`/votes/my${roomQuery}`);
   if (votesResponse.data?.votes) {
     for (const vote of votesResponse.data.votes) {
       if (vote.tier.toUpperCase() === "IGNORED") {
@@ -194,16 +205,19 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-8">
-    <p class="text-muted-foreground leading-relaxed">
+    <p v-if="!props.roomId" class="text-muted-foreground leading-relaxed">
       La Everything Tierlist est une tierlist sur laquelle vous devez tout
       trier, sans distinction, les propositions de
       {{ userCount ?? "..." }} utilisateurs.<br />Tous les éléments que vous
       créez seront disponible pour l'intégralité des utilisateurs. Vous pouvez
       ensuite double-cliquer sur un élément pour voir ses statistiques.
     </p>
+    <p v-else class="text-muted-foreground leading-relaxed">
+      Double-cliquez sur un élément pour voir ses statistiques.
+    </p>
 
     <!-- Search -->
-    <ItemSearch @add="handleAddItem" />
+    <ItemSearch :room-id="props.roomId" @add="handleAddItem" />
 
     <!-- Tier List -->
     <Card>
@@ -319,7 +333,7 @@ onMounted(async () => {
     </div>
 
     <!-- Stats Modal -->
-    <ItemStatsModal :item="selectedItem" v-model:open="statsModalOpen" />
+    <ItemStatsModal :item="selectedItem" :room-id="props.roomId" v-model:open="statsModalOpen" />
   </div>
 </template>
 

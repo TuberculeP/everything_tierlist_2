@@ -14,14 +14,21 @@ function getItemRepository() {
 router.get("/", async (req, res) => {
   try {
     const itemRepository = getItemRepository();
-    const { q } = req.query;
+    const { q, roomId } = req.query;
     const query = typeof q === "string" ? q.trim() : "";
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     let items: Item[];
+
+    const baseWhere = {
+      name: Not(IsNull()),
+      roomId: roomFilter ?? IsNull(),
+    };
 
     if (query.length > 0) {
       items = await itemRepository.find({
         where: {
+          ...baseWhere,
           name: And(Not(IsNull()), Like(`%${query}%`)),
         },
         order: { name: "ASC" },
@@ -29,7 +36,7 @@ router.get("/", async (req, res) => {
       });
     } else {
       items = await itemRepository.find({
-        where: { name: Not(IsNull()) },
+        where: baseWhere,
         order: { createdAt: "DESC" },
         take: 20,
       });
@@ -45,7 +52,7 @@ router.get("/", async (req, res) => {
 // GET /api/items/leaderboard - Get items ranked by score
 router.get("/leaderboard", async (req, res): Promise<void> => {
   try {
-    const { order = "desc", page = "1", limit = "20" } = req.query;
+    const { order = "desc", page = "1", limit = "20", roomId } = req.query;
     const sortOrder = order === "asc" ? "ASC" : "DESC";
     const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
     const limitNum = Math.min(
@@ -53,10 +60,12 @@ router.get("/leaderboard", async (req, res): Promise<void> => {
       Math.max(1, parseInt(limit as string, 10) || 20),
     );
     const offset = (pageNum - 1) * limitNum;
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     // Get total count
     const countResult = await AppDataSource.query(
-      `SELECT COUNT(*) as total FROM item WHERE name IS NOT NULL`,
+      `SELECT COUNT(*) as total FROM item i WHERE i.name IS NOT NULL AND ${roomFilter ? "i.room_id = $1" : "i.room_id IS NULL"}`,
+      roomFilter ? [roomFilter] : [],
     );
     const total = parseInt(countResult[0].total, 10);
 
@@ -81,12 +90,12 @@ router.get("/leaderboard", async (req, res): Promise<void> => {
         COUNT(v.id) FILTER (WHERE v.tier != 'IGNORED') as "voteCount"
       FROM item i
       LEFT JOIN vote v ON v.item_id = i.id
-      WHERE i.name IS NOT NULL
+      WHERE i.name IS NOT NULL AND ${roomFilter ? "i.room_id = $3" : "i.room_id IS NULL"}
       GROUP BY i.id, i.name, i.user_id, i.created_at
       ORDER BY score ${sortOrder}, "voteCount" DESC
       LIMIT $1 OFFSET $2
     `,
-      [limitNum, offset],
+      roomFilter ? [limitNum, offset, roomFilter] : [limitNum, offset],
     );
 
     res.json({
@@ -112,11 +121,25 @@ router.get("/my", async (req, res): Promise<void> => {
       return;
     }
 
+    const { roomId, all } = req.query;
     const userId = (req.user as { id: string }).id;
     const itemRepository = getItemRepository();
+    const fetchAll = all === "true";
+    const roomFilter = typeof roomId === "string" ? roomId : null;
+
+    const whereClause: Record<string, unknown> = {
+      userId,
+      name: Not(IsNull()),
+    };
+
+    // If not fetching all, apply room filter
+    if (!fetchAll) {
+      whereClause.roomId = roomFilter ?? IsNull();
+    }
 
     const items = await itemRepository.find({
-      where: { userId, name: Not(IsNull()) },
+      where: whereClause,
+      relations: ["room"],
       order: { createdAt: "DESC" },
     });
 
@@ -135,11 +158,13 @@ router.get("/my-unvoted", async (req, res): Promise<void> => {
       return;
     }
 
+    const { roomId } = req.query;
     const userId = (req.user as { id: string }).id;
     const itemRepository = getItemRepository();
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     // Get items created by user that don't have a vote from this user
-    const items = await itemRepository
+    const queryBuilder = itemRepository
       .createQueryBuilder("item")
       .leftJoin(
         Vote,
@@ -149,9 +174,15 @@ router.get("/my-unvoted", async (req, res): Promise<void> => {
       )
       .where("item.user_id = :userId", { userId })
       .andWhere("item.name IS NOT NULL")
-      .andWhere("vote.id IS NULL")
-      .orderBy("item.created_at", "DESC")
-      .getMany();
+      .andWhere("vote.id IS NULL");
+
+    if (roomFilter) {
+      queryBuilder.andWhere("item.room_id = :roomId", { roomId: roomFilter });
+    } else {
+      queryBuilder.andWhere("item.room_id IS NULL");
+    }
+
+    const items = await queryBuilder.orderBy("item.created_at", "DESC").getMany();
 
     res.json({ items });
   } catch (error) {
@@ -168,12 +199,14 @@ router.get("/recommendations", async (req, res): Promise<void> => {
       return;
     }
 
+    const { roomId } = req.query;
     const userId = (req.user as { id: string }).id;
     const itemRepository = getItemRepository();
     const limit = 20;
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     // 1. Get user's own items they haven't voted on (priority)
-    const myUnvotedItems = await itemRepository
+    const myUnvotedQuery = itemRepository
       .createQueryBuilder("item")
       .leftJoin(
         Vote,
@@ -183,7 +216,15 @@ router.get("/recommendations", async (req, res): Promise<void> => {
       )
       .where("item.user_id = :userId", { userId })
       .andWhere("item.name IS NOT NULL")
-      .andWhere("vote.id IS NULL")
+      .andWhere("vote.id IS NULL");
+
+    if (roomFilter) {
+      myUnvotedQuery.andWhere("item.room_id = :roomId", { roomId: roomFilter });
+    } else {
+      myUnvotedQuery.andWhere("item.room_id IS NULL");
+    }
+
+    const myUnvotedItems = await myUnvotedQuery
       .orderBy("item.created_at", "DESC")
       .getMany();
 
@@ -192,7 +233,7 @@ router.get("/recommendations", async (req, res): Promise<void> => {
     let otherItems: Item[] = [];
 
     if (remainingSlots > 0) {
-      otherItems = await itemRepository
+      const otherQuery = itemRepository
         .createQueryBuilder("item")
         .where("item.name IS NOT NULL")
         .andWhere("item.user_id != :userId", { userId })
@@ -206,7 +247,15 @@ router.get("/recommendations", async (req, res): Promise<void> => {
             .getQuery();
           return `NOT EXISTS ${subQuery}`;
         })
-        .setParameter("userId", userId)
+        .setParameter("userId", userId);
+
+      if (roomFilter) {
+        otherQuery.andWhere("item.room_id = :roomId", { roomId: roomFilter });
+      } else {
+        otherQuery.andWhere("item.room_id IS NULL");
+      }
+
+      otherItems = await otherQuery
         .orderBy("RANDOM()")
         .take(remainingSlots)
         .getMany();
@@ -230,7 +279,8 @@ router.post("/", async (req, res): Promise<void> => {
       return;
     }
 
-    const { name } = req.body;
+    const { name, roomId } = req.body;
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     if (!name || typeof name !== "string") {
       res.status(400).json({ error: "Name is required" });
@@ -251,12 +301,19 @@ router.post("/", async (req, res): Promise<void> => {
 
     const itemRepository = getItemRepository();
 
-    // Check if item already exists (case insensitive)
-    const existing = await itemRepository
+    // Check if item already exists in the same room (case insensitive)
+    const existingQuery = itemRepository
       .createQueryBuilder("item")
       .where("item.name IS NOT NULL")
-      .andWhere("LOWER(item.name) = LOWER(:name)", { name: trimmedName })
-      .getOne();
+      .andWhere("LOWER(item.name) = LOWER(:name)", { name: trimmedName });
+
+    if (roomFilter) {
+      existingQuery.andWhere("item.room_id = :roomId", { roomId: roomFilter });
+    } else {
+      existingQuery.andWhere("item.room_id IS NULL");
+    }
+
+    const existing = await existingQuery.getOne();
 
     if (existing) {
       res.status(409).json({ error: "Item already exists", item: existing });
@@ -266,6 +323,7 @@ router.post("/", async (req, res): Promise<void> => {
     const item = itemRepository.create({
       name: trimmedName,
       userId: (req.user as { id: string }).id,
+      roomId: roomFilter,
     });
 
     await itemRepository.save(item);

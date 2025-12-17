@@ -13,6 +13,7 @@ import type { Item } from "@/lib/utils/types";
 const props = defineProps<{
   item: Item | null;
   open: boolean;
+  roomId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -93,8 +94,9 @@ watch(
   async (newItem) => {
     if (newItem) {
       isLoading.value = true;
+      const roomQuery = props.roomId ? `?roomId=${props.roomId}` : "";
       const response = await apiClient.get<VoteStats>(
-        `/votes/stats/${newItem.id}`,
+        `/votes/stats/${newItem.id}${roomQuery}`,
       );
       if (response.data) {
         stats.value = response.data;

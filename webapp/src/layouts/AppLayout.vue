@@ -10,15 +10,30 @@
           <!-- <img src="/et_logo.png" alt="Everything Tierlist" width="100" /> -->
           Everything Tierlist
           <Badge variant="outline">alpha</Badge>
+          <template v-if="isInRoom && currentRoom">
+            <span class="text-muted-foreground">/</span>
+            <Badge variant="secondary" class="font-normal">
+              {{ currentRoom.name }}
+            </Badge>
+          </template>
         </h1>
 
         <template v-if="isAuthenticated">
           <!-- Navigation -->
           <nav class="flex gap-1">
+            <!-- Retour public si dans une room -->
+            <router-link
+              v-if="isInRoom"
+              :to="{ name: 'landing-main' }"
+              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            >
+              <Home class="w-4 h-4 inline-block mr-1.5" />
+              Public
+            </router-link>
             <router-link
               v-for="tab in tabs"
               :key="tab.name"
-              :to="{ name: tab.name }"
+              :to="{ name: tab.name, params: tab.params }"
               :class="[
                 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                 isActiveTab(tab.name)
@@ -103,20 +118,30 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
+import { computed, ref } from "vue";
 import { useAuthStore } from "../stores/authStore";
+import { useRoomStore } from "../stores/roomStore";
 import apiClient from "../lib/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/ui/badge/Badge.vue";
-import { ref } from "vue";
-import { LayoutGrid, Trophy, LogOut, Heart } from "lucide-vue-next";
+import { LayoutGrid, Trophy, LogOut, Heart, Plus, Home } from "lucide-vue-next";
 
 const route = useRoute();
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
+const { currentRoom, isInRoom } = storeToRefs(useRoomStore());
 
-const tabs = [
-  { name: "landing-main", label: "Tierlist", icon: LayoutGrid },
-  { name: "app-leaderboard", label: "Leaderboard", icon: Trophy },
-];
+const tabs = computed(() => {
+  if (isInRoom.value && currentRoom.value) {
+    return [
+      { name: "room-tierlist", label: "Tierlist", icon: LayoutGrid, params: { hash: currentRoom.value.hash } },
+      { name: "room-leaderboard", label: "Leaderboard", icon: Trophy, params: { hash: currentRoom.value.hash } },
+    ];
+  }
+  return [
+    { name: "landing-main", label: "Tierlist", icon: LayoutGrid, params: {} },
+    { name: "app-leaderboard", label: "Leaderboard", icon: Trophy, params: {} },
+  ];
+});
 
 function isActiveTab(tabName: string): boolean {
   return route.name === tabName;

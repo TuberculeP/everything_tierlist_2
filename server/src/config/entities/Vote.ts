@@ -9,9 +9,10 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { Item } from "./Item";
+import { Room } from "./Room";
 
 @Entity()
-@Unique(["userId", "itemId"]) // Un seul vote par user par item
+@Unique(["userId", "itemId", "roomId"])
 export class Vote {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -35,4 +36,11 @@ export class Vote {
 
   @UpdateDateColumn({ name: "modified_at" })
   modifiedAt: Date;
+
+  @ManyToOne(() => Room, { nullable: true, onDelete: "CASCADE" })
+  @JoinColumn({ name: "room_id" })
+  room: Room | null;
+
+  @Column({ name: "room_id", nullable: true })
+  roomId: string | null;
 }

@@ -19,8 +19,9 @@ router.post("/", async (req, res): Promise<void> => {
       return;
     }
 
-    const { itemId, tier } = req.body;
+    const { itemId, tier, roomId } = req.body;
     const userId = (req.user as { id: string }).id;
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     if (!itemId || typeof itemId !== "string") {
       res.status(400).json({ error: "itemId is required" });
@@ -41,9 +42,16 @@ router.post("/", async (req, res): Promise<void> => {
 
     const voteRepository = getVoteRepository();
 
-    // Check if vote already exists for this user/item
+    // Check if vote already exists for this user/item/room
+    const whereCondition: any = { userId, itemId };
+    if (roomFilter) {
+      whereCondition.roomId = roomFilter;
+    } else {
+      whereCondition.roomId = IsNull();
+    }
+
     let vote = await voteRepository.findOne({
-      where: { userId, itemId },
+      where: whereCondition,
     });
 
     if (vote) {
@@ -56,6 +64,7 @@ router.post("/", async (req, res): Promise<void> => {
         userId,
         itemId,
         tier: upperTier,
+        roomId: roomFilter,
       });
       await voteRepository.save(vote);
     }
@@ -76,11 +85,21 @@ router.delete("/:itemId", async (req, res): Promise<void> => {
     }
 
     const { itemId } = req.params;
+    const { roomId } = req.query;
     const userId = (req.user as { id: string }).id;
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     const voteRepository = getVoteRepository();
 
-    const result = await voteRepository.delete({ userId, itemId });
+    // Build delete condition with room scope
+    const deleteCondition: any = { userId, itemId };
+    if (roomFilter) {
+      deleteCondition.roomId = roomFilter;
+    } else {
+      deleteCondition.roomId = IsNull();
+    }
+
+    const result = await voteRepository.delete(deleteCondition);
 
     res.json({ deleted: result.affected ?? 0 });
   } catch (error) {
@@ -93,21 +112,35 @@ router.delete("/:itemId", async (req, res): Promise<void> => {
 router.get("/stats/:itemId", async (req, res): Promise<void> => {
   try {
     const { itemId } = req.params;
+    const { roomId } = req.query;
     const voteRepository = getVoteRepository();
+    const roomFilter = typeof roomId === "string" ? roomId : null;
 
     // Get vote counts by tier
-    const stats = await voteRepository
+    const statsQuery = voteRepository
       .createQueryBuilder("vote")
       .select("vote.tier", "tier")
       .addSelect("COUNT(*)", "count")
       .where("vote.item_id = :itemId", { itemId })
-      .andWhere("vote.tier IS NOT NULL")
-      .groupBy("vote.tier")
-      .getRawMany();
+      .andWhere("vote.tier IS NOT NULL");
+
+    if (roomFilter) {
+      statsQuery.andWhere("vote.room_id = :roomId", { roomId: roomFilter });
+    } else {
+      statsQuery.andWhere("vote.room_id IS NULL");
+    }
+
+    const stats = await statsQuery.groupBy("vote.tier").getRawMany();
 
     // Get total votes
+    const countCondition: any = { itemId, tier: Not(IsNull()) };
+    if (roomFilter) {
+      countCondition.roomId = roomFilter;
+    } else {
+      countCondition.roomId = IsNull();
+    }
     const totalVotes = await voteRepository.count({
-      where: { itemId, tier: Not(IsNull()) },
+      where: countCondition,
     });
 
     // Format the response with all tiers (even if 0 votes)
@@ -142,11 +175,20 @@ router.get("/my", async (req, res): Promise<void> => {
       return;
     }
 
+    const { roomId } = req.query;
     const userId = (req.user as { id: string }).id;
     const voteRepository = getVoteRepository();
+    const roomFilter = typeof roomId === "string" ? roomId : null;
+
+    const whereCondition: any = { userId, tier: Not(IsNull()) };
+    if (roomFilter) {
+      whereCondition.roomId = roomFilter;
+    } else {
+      whereCondition.roomId = IsNull();
+    }
 
     const votes = await voteRepository.find({
-      where: { userId, tier: Not(IsNull()) },
+      where: whereCondition,
       relations: ["item"],
     });
 
@@ -165,11 +207,20 @@ router.get("/ignored", async (req, res): Promise<void> => {
       return;
     }
 
+    const { roomId } = req.query;
     const userId = (req.user as { id: string }).id;
     const voteRepository = getVoteRepository();
+    const roomFilter = typeof roomId === "string" ? roomId : null;
+
+    const whereCondition: any = { userId, tier: "IGNORED" };
+    if (roomFilter) {
+      whereCondition.roomId = roomFilter;
+    } else {
+      whereCondition.roomId = IsNull();
+    }
 
     const votes = await voteRepository.find({
-      where: { userId, tier: "IGNORED" },
+      where: whereCondition,
       relations: ["item"],
       order: { modifiedAt: "DESC" },
     });
