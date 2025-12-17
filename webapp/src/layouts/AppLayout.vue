@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { computed, ref } from "vue";
 import { useAuthStore } from "../stores/authStore";
 import { useRoomStore } from "../stores/roomStore";
@@ -127,6 +127,7 @@ import Badge from "@/components/ui/badge/Badge.vue";
 import { LayoutGrid, Trophy, LogOut, Heart, Home } from "lucide-vue-next";
 
 const route = useRoute();
+const router = useRouter();
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
 const { currentRoom, isInRoom } = storeToRefs(useRoomStore());
 
@@ -161,7 +162,7 @@ async function disconnect() {
   const result = await apiClient.post("/auth/logout");
   if (result.data) {
     user.value = undefined;
-    window.location.reload();
+    router.push({ name: "landing" });
   } else {
     console.error("Erreur lors de la deconnexion :", result.error);
   }
