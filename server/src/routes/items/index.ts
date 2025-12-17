@@ -182,7 +182,9 @@ router.get("/my-unvoted", async (req, res): Promise<void> => {
       queryBuilder.andWhere("item.room_id IS NULL");
     }
 
-    const items = await queryBuilder.orderBy("item.created_at", "DESC").getMany();
+    const items = await queryBuilder
+      .orderBy("item.created_at", "DESC")
+      .getMany();
 
     res.json({ items });
   } catch (error) {

@@ -295,7 +295,7 @@ async function fetchLeaderboard() {
 
   loading.value = true;
   const result = await apiClient.get<LeaderboardResponse>(
-    `/items/leaderboard?order=${sortOrder.value}&page=${page.value}&limit=${limit.value}&roomId=${room.value.id}`
+    `/items/leaderboard?order=${sortOrder.value}&page=${page.value}&limit=${limit.value}&roomId=${room.value.id}`,
   );
   if (result.data) {
     items.value = result.data.items;
@@ -329,7 +329,7 @@ function getRank(index: number): number {
 }
 
 function getScoreVariant(
-  score: number
+  score: number,
 ): "default" | "secondary" | "destructive" | "outline" {
   if (score > 0) return "default";
   if (score < 0) return "destructive";

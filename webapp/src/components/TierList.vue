@@ -180,7 +180,9 @@ onMounted(async () => {
 
   // Load existing votes into tiers
   const roomQuery = props.roomId ? `?roomId=${props.roomId}` : "";
-  const votesResponse = await apiClient.get<{ votes: Vote[] }>(`/votes/my${roomQuery}`);
+  const votesResponse = await apiClient.get<{ votes: Vote[] }>(
+    `/votes/my${roomQuery}`,
+  );
   if (votesResponse.data?.votes) {
     for (const vote of votesResponse.data.votes) {
       if (vote.tier.toUpperCase() === "IGNORED") {
@@ -333,7 +335,11 @@ onMounted(async () => {
     </div>
 
     <!-- Stats Modal -->
-    <ItemStatsModal :item="selectedItem" :room-id="props.roomId" v-model:open="statsModalOpen" />
+    <ItemStatsModal
+      :item="selectedItem"
+      :room-id="props.roomId"
+      v-model:open="statsModalOpen"
+    />
   </div>
 </template>
 

@@ -80,7 +80,10 @@ async function handleSubmit() {
 
   if (response.data?.room) {
     roomStore.addRoom(response.data.room);
-    router.push({ name: "room-tierlist", params: { hash: response.data.room.hash } });
+    router.push({
+      name: "room-tierlist",
+      params: { hash: response.data.room.hash },
+    });
   }
 }
 </script>

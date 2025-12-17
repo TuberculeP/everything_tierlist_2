@@ -105,7 +105,11 @@
               <Badge v-if="item.room" variant="secondary" class="text-xs">
                 {{ item.room.name }}
               </Badge>
-              <Badge v-else-if="itemsRoomFilter === 'all'" variant="outline" class="text-xs">
+              <Badge
+                v-else-if="itemsRoomFilter === 'all'"
+                variant="outline"
+                class="text-xs"
+              >
                 Public
               </Badge>
             </div>
@@ -132,7 +136,8 @@
           </router-link>
         </CardTitle>
         <CardDescription>
-          Les rooms vous permettent de créer des tierlists privées partageables via un lien.
+          Les rooms vous permettent de créer des tierlists privées partageables
+          via un lien.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -153,12 +158,17 @@
           >
             <div class="flex-1 min-w-0">
               <p class="font-medium truncate">{{ room.name }}</p>
-              <p v-if="room.description" class="text-sm text-muted-foreground truncate">
+              <p
+                v-if="room.description"
+                class="text-sm text-muted-foreground truncate"
+              >
                 {{ room.description }}
               </p>
             </div>
             <div class="flex items-center gap-1 ml-2">
-              <router-link :to="{ name: 'room-tierlist', params: { hash: room.hash } }">
+              <router-link
+                :to="{ name: 'room-tierlist', params: { hash: room.hash } }"
+              >
                 <Button variant="ghost" size="icon-sm" title="Ouvrir">
                   <ExternalLink class="w-4 h-4" />
                 </Button>
@@ -301,7 +311,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash, Trash2, RotateCcw, ExternalLink } from "lucide-vue-next";
+import {
+  Pencil,
+  Trash,
+  Trash2,
+  RotateCcw,
+  ExternalLink,
+} from "lucide-vue-next";
 
 const { user } = storeToRefs(useAuthStore());
 const roomStore = useRoomStore();
@@ -451,7 +467,9 @@ async function deleteRoom() {
   const result = await apiClient.delete(`/rooms/${roomToDelete.value.hash}`);
 
   if (!result.error) {
-    myRooms.value = myRooms.value.filter((r) => r.id !== roomToDelete.value?.id);
+    myRooms.value = myRooms.value.filter(
+      (r) => r.id !== roomToDelete.value?.id,
+    );
     roomStore.removeRoom(roomToDelete.value.id);
     showDeleteRoomDialog.value = false;
   }

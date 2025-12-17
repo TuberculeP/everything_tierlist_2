@@ -124,7 +124,7 @@ import { useRoomStore } from "../stores/roomStore";
 import apiClient from "../lib/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/ui/badge/Badge.vue";
-import { LayoutGrid, Trophy, LogOut, Heart, Plus, Home } from "lucide-vue-next";
+import { LayoutGrid, Trophy, LogOut, Heart, Home } from "lucide-vue-next";
 
 const route = useRoute();
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
@@ -133,8 +133,18 @@ const { currentRoom, isInRoom } = storeToRefs(useRoomStore());
 const tabs = computed(() => {
   if (isInRoom.value && currentRoom.value) {
     return [
-      { name: "room-tierlist", label: "Tierlist", icon: LayoutGrid, params: { hash: currentRoom.value.hash } },
-      { name: "room-leaderboard", label: "Leaderboard", icon: Trophy, params: { hash: currentRoom.value.hash } },
+      {
+        name: "room-tierlist",
+        label: "Tierlist",
+        icon: LayoutGrid,
+        params: { hash: currentRoom.value.hash },
+      },
+      {
+        name: "room-leaderboard",
+        label: "Leaderboard",
+        icon: Trophy,
+        params: { hash: currentRoom.value.hash },
+      },
     ];
   }
   return [
